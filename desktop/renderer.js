@@ -37,7 +37,12 @@ function describe(payload) {
   const t = payload.target || payload;
   const typeLabel = t.targetType === "shared_snapshot" ? "共享快照" : t.targetType === "scheduled_task" ? "共享任务" : t.targetType === "thread" ? "对话" : t.targetType;
   const scope = [t.provider, typeLabel, t.id].filter(Boolean).join(" / ");
-  if (payload.access === "read") { const coverage = payload.coverage?.kind === "full" ? "完整可见内容" : payload.coverage?.kind === "partial" ? "部分内容" : "未提取到可分析文本"; return `${scope} · 已读取 ${payload.coverage?.turns ?? 0} 个轮次，${coverage} · ${payload.checkedAt || "刚刚"}`; }
+  if (payload.access === "read") {
+    const coverage = payload.coverage?.kind === "full" ? "完整可见内容" : payload.coverage?.kind === "partial" ? "部分内容" : "未提取到可分析文本";
+    const amount = Number.isFinite(payload.coverage?.turns) ? `已读取 ${payload.coverage.turns} 个轮次` : "已读取分享页可见文本";
+    const snapshotNote = t.targetType === "shared_snapshot" ? " · 分享时静态快照" : "";
+    return `${scope} · ${amount}，${coverage}${snapshotNote} · ${payload.checkedAt || "刚刚"}`;
+  }
   if (payload.access === "stale") return `${scope} · 刷新失败，缓存已过期（${reasonLabel(payload.reason)}）`;
   return `${scope} · ${reasonLabel(payload.reason)}`;
 }
