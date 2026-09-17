@@ -273,7 +273,7 @@ async function setAutoShowWithCodex(enabled) {
   if (!result.ok) return result;
   prefs.autoShowWithCodex = Boolean(enabled);
   savePreferences();
-  watcherEnabled = Boolean(enabled) || process.argv.includes("--watch-codex");
+  watcherEnabled = Boolean(enabled);
   if (watcherEnabled) startCodexWatcher(); else stopCodexWatcher();
   updateTrayMenu();
   sendToWindow("preferences", getPublicPreferences(result.registered));
@@ -327,7 +327,7 @@ function startCodexWatcher() {
 function stopCodexWatcher() {
   if (codexWatcher) clearInterval(codexWatcher);
   codexWatcher = null;
-  watcherEnabled = process.argv.includes("--watch-codex");
+  watcherEnabled = false;
   codexWasRunning = false;
   codexMisses = 0;
 }
