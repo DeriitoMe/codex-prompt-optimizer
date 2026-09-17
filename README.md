@@ -76,6 +76,8 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\\scripts\\register-cod
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\\scripts\\register-codex-autostart.ps1 -Uninstall
 ```
 
+也可以直接双击仓库根目录的 `register-codex-autostart.cmd` 注册，或双击 `unregister-codex-autostart.cmd` 移除，避免 PowerShell 多行命令输入问题。
+
 这是可选的 Windows 启动项，不会在你未执行注册命令时改变系统设置。
 
 构建 Windows 安装包和便携包：
