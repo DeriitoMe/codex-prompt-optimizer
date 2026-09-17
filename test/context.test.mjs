@@ -21,13 +21,20 @@ test("parses ChatGPT conversation links without claiming access", () => {
   assert.equal(target.access, "unverified");
 });
 
-test("recognizes ChatGPT /s links as shared scheduled tasks", () => {
+test("recognizes Codex shared snapshot links on the ChatGPT origin", () => {
   const target = resolveContextTarget("https://chatgpt.com/s/cx_6aaacdc5804481918c22acc90639d481");
-  assert.equal(target.provider, "chatgpt");
-  assert.equal(target.targetType, "scheduled_task");
+  assert.equal(target.provider, "codex");
+  assert.equal(target.targetType, "shared_snapshot");
   assert.equal(target.id, "cx_6aaacdc5804481918c22acc90639d481");
   assert.equal(target.access, "unverified");
-  assert.match(fallbackInstruction(target, "chatgpt_scheduled_task_link_not_conversation"), /共享任务链接/);
+  assert.match(fallbackInstruction(target, "codex_shared_snapshot_requires_browser_reader"), /共享对话快照/);
+});
+
+test("recognizes Codex shared-thread deep links", () => {
+  const target = resolveContextTarget("codex://shared-thread/cx_0123456789abcdef0123456789abcdef");
+  assert.equal(target.provider, "codex");
+  assert.equal(target.targetType, "shared_snapshot");
+  assert.equal(target.id, "cx_0123456789abcdef0123456789abcdef");
 });
 
 test("parses the public ChatGPT share route for paste-and-status handling", () => {
@@ -39,9 +46,9 @@ test("parses the public ChatGPT share route for paste-and-status handling", () =
 });
 
 test("extracts a URL copied from Markdown or angle-bracket formatting", () => {
-  const markdown = resolveContextTarget("[任务](https://chatgpt.com/s/cx_demo123)");
-  assert.equal(markdown.id, "cx_demo123");
-  assert.equal(markdown.targetType, "scheduled_task");
+  const markdown = resolveContextTarget("[任务](https://chatgpt.com/s/cx_0123456789abcdef0123456789abcdef)");
+  assert.equal(markdown.id, "cx_0123456789abcdef0123456789abcdef");
+  assert.equal(markdown.targetType, "shared_snapshot");
   const bracketed = resolveContextTarget("<https://chatgpt.com/share/demo123>");
   assert.equal(bracketed.id, "demo123");
 });

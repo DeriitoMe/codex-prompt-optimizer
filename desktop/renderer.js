@@ -21,6 +21,10 @@ function setBadge(text, kind = "neutral") {
 
 function reasonLabel(reason) {
   const labels = {
+    codex_shared_snapshot_load_timeout: "共享快照加载超时",
+    codex_shared_snapshot_empty: "共享快照没有可读取文本",
+    codex_shared_snapshot_unavailable: "共享快照当前不可访问",
+    codex_shared_snapshot_requires_browser_reader: "需要在伴随窗口中读取共享快照",
     chatgpt_scheduled_task_link_not_conversation: "这是共享任务链接，不是对话历史",
     only_codex_thread_read_is_available_in_this_version: "当前版本只读取 Codex 对话线程",
     codex_thread_not_found: "找不到对应的 Codex 线程",
@@ -31,7 +35,7 @@ function reasonLabel(reason) {
 function describe(payload) {
   if (!payload) return "未绑定目标。";
   const t = payload.target || payload;
-  const typeLabel = t.targetType === "scheduled_task" ? "共享任务" : t.targetType === "thread" ? "对话" : t.targetType;
+  const typeLabel = t.targetType === "shared_snapshot" ? "共享快照" : t.targetType === "scheduled_task" ? "共享任务" : t.targetType === "thread" ? "对话" : t.targetType;
   const scope = [t.provider, typeLabel, t.id].filter(Boolean).join(" / ");
   if (payload.access === "read") { const coverage = payload.coverage?.kind === "full" ? "完整可见内容" : payload.coverage?.kind === "partial" ? "部分内容" : "未提取到可分析文本"; return `${scope} · 已读取 ${payload.coverage?.turns ?? 0} 个轮次，${coverage} · ${payload.checkedAt || "刚刚"}`; }
   if (payload.access === "stale") return `${scope} · 刷新失败，缓存已过期（${reasonLabel(payload.reason)}）`;

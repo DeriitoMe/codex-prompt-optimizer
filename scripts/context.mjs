@@ -63,6 +63,7 @@ function inferTarget(parsed) {
   // preserving the original URL for the safe normalized display value.
   const routePath = parsed.protocol === "codex:" && host ? [host, ...path] : path;
   const lowerPath = routePath.map((part) => part.toLowerCase());
+  const sharedCodexId = lowerPath[1] && /^cx_[a-f0-9]{32}$/i.test(routePath[1]) ? routePath[1] : null;
   const queryId = parsed.searchParams.get("threadId")
     ?? parsed.searchParams.get("thread_id")
     ?? parsed.searchParams.get("conversationId")
@@ -82,6 +83,11 @@ function inferTarget(parsed) {
     provider = "chatgpt";
   }
 
+  // Codex shared thread snapshots currently use the ChatGPT web origin but
+  // have a distinctive /s/cx_<32 hex> route. They are read-only Codex
+  // snapshots, not ChatGPT scheduled tasks.
+  if (provider === "chatgpt" && lowerPath[0] === "s" && sharedCodexId) provider = "codex";
+
   let targetType = "unknown";
   let id = safePathId(queryId);
   const markerIndex = lowerPath.findIndex((part) =>
@@ -94,9 +100,13 @@ function inferTarget(parsed) {
   } else if (projectIndex >= 0) {
     targetType = "project";
     id = id ?? safePathId(routePath[projectIndex + 1]);
+  } else if (parsed.protocol === "codex:" && lowerPath[0] === "shared-thread" && sharedCodexId) {
+    targetType = "shared_snapshot";
+    id = sharedCodexId;
+  } else if (provider === "codex" && lowerPath[0] === "s" && sharedCodexId) {
+    targetType = "shared_snapshot";
+    id = sharedCodexId;
   } else if (markerIndex >= 0) {
-    // ChatGPT task routes are not conversation history. Keep them distinct so
-    // the UI can explain why a /s/ link cannot provide turns.
     targetType = provider === "chatgpt" && ["task", "tasks", "run", "runs"].includes(lowerPath[markerIndex])
       ? "scheduled_task"
       : "thread";
@@ -108,13 +118,7 @@ function inferTarget(parsed) {
   ) {
     targetType = "thread";
     id = safePathId(routePath[1]);
-  } else if (
-    provider === "chatgpt"
-    && routePath.length >= 2
-    && lowerPath[0] === "s"
-  ) {
-    // OpenAI documents /s/ as a shared scheduled-task link, not a shared
-    // conversation link. It does not expose conversation turns for this app.
+  } else if (provider === "chatgpt" && routePath.length >= 2 && lowerPath[0] === "s") {
     targetType = "scheduled_task";
     id = safePathId(routePath[1]);
   }
@@ -252,8 +256,11 @@ export function contextFingerprint(payload) {
 
 export function fallbackInstruction(target, reason) {
   const label = target?.provider === "codex" ? "Codex" : target?.provider === "chatgpt" ? "ChatGPT" : "目标";
+  if (target?.provider === "codex" && target?.targetType === "shared_snapshot") {
+    return `这是 Codex 的共享对话快照链接。它是创建分享时的只读静态副本，不会随原任务后续更新。请确认共享页面在浏览器中可以打开；如果当前客户端无法读取网页快照，可回到原 Codex 对话调用 Context Prompt Assistant。只输出优化后的提示词、待确认问题和上下文状态，暂不执行。\n\n当前快照未能自动读取：${reason}`;
+  }
   if (target?.provider === "chatgpt" && target?.targetType === "scheduled_task") {
-    return `这个链接是 ChatGPT 的共享任务链接（/s/），不是可读取的对话历史。请在 ChatGPT 对话中使用“分享”生成 https://chatgpt.com/share/... 链接，或直接回到原对话调用 Context Prompt Assistant；只输出优化后的提示词、待确认问题和上下文状态，暂不执行。\n\n当前链接未能自动读取：${reason}`;
+    return `这个链接是 ChatGPT 的共享任务链接（/s/），不是对话历史。请在 ChatGPT 对话中使用“分享”生成 https://chatgpt.com/share/... 链接，或直接回到原对话调用 Context Prompt Assistant；只输出优化后的提示词、待确认问题和上下文状态，暂不执行。\n\n当前链接未能自动读取：${reason}`;
   }
   return `请在这个 ${label} 项目或对话中显式调用 Context Prompt Assistant，回看当前可见的相关上下文，优化我下一条指令；只输出优化后的提示词、待确认问题和上下文状态，暂不执行。\n\n当前链接未能自动读取：${reason}`;
 }
@@ -266,5 +273,21 @@ export function classifyReadFailure(target, reason) {
     coverage: { kind: "none", turns: 0, messages: 0, truncated: false },
     reason,
     fallback: fallbackInstruction(target, reason),
+  };
+}
+
+export function normalizeSharedSnapshot(text, maxChars = DEFAULT_MAX_CHARS) {
+  const clipped = clipText(text, maxChars);
+  return {
+    source: "codex-shared-snapshot",
+    coverage: {
+      // DOM extraction cannot guarantee the provider's internal turn count.
+      kind: "partial",
+      turns: null,
+      messages: null,
+      characters: clipped.originalChars,
+      truncated: clipped.truncated,
+    },
+    text: clipped.text,
   };
 }

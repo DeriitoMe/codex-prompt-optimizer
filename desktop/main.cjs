@@ -49,6 +49,71 @@ function isCodexRunning() {
   });
 }
 
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function readSharedCodexSnapshot(url, maxChars = 24000) {
+  const { contextModule } = await modules();
+  let snapshotWindow;
+  try {
+    snapshotWindow = new BrowserWindow({
+      show: false,
+      title: "Codex shared snapshot reader",
+      webPreferences: {
+        contextIsolation: true,
+        nodeIntegration: false,
+        sandbox: true,
+      },
+    });
+    snapshotWindow.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
+    snapshotWindow.webContents.on("will-navigate", (event, nextUrl) => {
+      try {
+        const next = new URL(nextUrl);
+        if (!next.hostname.endsWith("chatgpt.com") && next.hostname !== "chat.openai.com") event.preventDefault();
+      } catch {
+        event.preventDefault();
+      }
+    });
+    await Promise.race([
+      snapshotWindow.loadURL(url, { userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131 Safari/537.36" }),
+      delay(15000).then(() => { throw new Error("codex_shared_snapshot_load_timeout"); }),
+    ]);
+
+    const deadline = Date.now() + 10000;
+    let page = null;
+    while (Date.now() < deadline) {
+      page = await snapshotWindow.webContents.executeJavaScript(`(() => ({
+        title: document.title || "",
+        text: document.body?.innerText || "",
+        url: location.href,
+      }))()`, true);
+      if (page?.text?.trim().length >= 160) break;
+      await delay(300);
+    }
+    const text = String(page?.text || "").trim();
+    if (!text) throw new Error("codex_shared_snapshot_empty");
+    if (/access denied|page not found|something went wrong/i.test(text) && text.length < 1200) {
+      throw new Error("codex_shared_snapshot_unavailable");
+    }
+    const normalized = contextModule.normalizeSharedSnapshot(text, maxChars);
+    return {
+      ok: true,
+      target: contextModule.resolveContextTarget(url),
+      access: "read",
+      checkedAt: new Date().toISOString(),
+      ...normalized,
+    };
+  } catch (error) {
+    return contextModule.classifyReadFailure(
+      contextModule.resolveContextTarget(url),
+      error?.message || "codex_shared_snapshot_read_failed",
+    );
+  } finally {
+    if (snapshotWindow && !snapshotWindow.isDestroyed()) snapshotWindow.destroy();
+  }
+}
+
 async function watchCodexProcess() {
   const running = await isCodexRunning();
   if (running && !codexWasRunning) {
@@ -70,6 +135,9 @@ async function readContext(url, maxChars = 24000) {
   const { contextModule, appServerModule } = await modules();
   const target = contextModule.resolveContextTarget(url);
   if (!target.ok) return contextModule.classifyReadFailure(target, target.reason);
+  if (target.provider === "codex" && target.targetType === "shared_snapshot") {
+    return await readSharedCodexSnapshot(url, maxChars);
+  }
   if (target.provider !== "codex" || target.targetType !== "thread") {
     const reason = target.provider === "chatgpt" && target.targetType === "scheduled_task"
       ? "chatgpt_scheduled_task_link_not_conversation"
