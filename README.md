@@ -48,6 +48,10 @@ node scripts/app-server-diagnostics.mjs
 npm run dev
 ```
 
+插件被调用时不会自动弹出 Electron 窗口：Skill/MCP 运行在 Codex 对话内，伴随窗口是独立客户端。日常使用请从开始菜单启动已安装的 `Context Prompt Assistant`，或在项目目录运行上面的命令；安装包位于 `release/`。
+
+如果 `npm run dev` 后没有看到窗口，可直接运行 `node_modules\\electron\\dist\\electron.exe .` 检查开发环境，或启动 `release\\Context Prompt Assistant-0.2.0-x64-portable.exe`。窗口创建后会在 Codex 旁边独立显示，不会嵌入 Codex 主窗口。
+
 构建 Windows 安装包和便携包：
 
 ```powershell
