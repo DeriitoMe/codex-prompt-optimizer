@@ -65,7 +65,10 @@ async function readTarget(args) {
   const target = resolveContextTarget(args?.url);
   if (!target.ok) return classifyReadFailure(target, target.reason);
   if (target.provider !== "codex" || target.targetType !== "thread") {
-    return classifyReadFailure(target, "only_codex_thread_read_is_available_in_this_version");
+    const reason = target.provider === "chatgpt" && target.targetType === "scheduled_task"
+      ? "chatgpt_scheduled_task_link_not_conversation"
+      : "only_codex_thread_read_is_available_in_this_version";
+    return classifyReadFailure(target, reason);
   }
   try {
     const thread = await readCodexThread(target.id, { timeoutMs: 15000 });

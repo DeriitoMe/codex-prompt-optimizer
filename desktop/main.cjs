@@ -70,7 +70,12 @@ async function readContext(url, maxChars = 24000) {
   const { contextModule, appServerModule } = await modules();
   const target = contextModule.resolveContextTarget(url);
   if (!target.ok) return contextModule.classifyReadFailure(target, target.reason);
-  if (target.provider !== "codex" || target.targetType !== "thread") return contextModule.classifyReadFailure(target, "only_codex_thread_read_is_available_in_this_version");
+  if (target.provider !== "codex" || target.targetType !== "thread") {
+    const reason = target.provider === "chatgpt" && target.targetType === "scheduled_task"
+      ? "chatgpt_scheduled_task_link_not_conversation"
+      : "only_codex_thread_read_is_available_in_this_version";
+    return contextModule.classifyReadFailure(target, reason);
+  }
   try {
     const thread = await appServerModule.readCodexThread(target.id, { timeoutMs: 15000 });
     if (!thread) return contextModule.classifyReadFailure(target, "codex_thread_not_found");

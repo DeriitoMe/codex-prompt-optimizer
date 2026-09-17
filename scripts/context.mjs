@@ -95,14 +95,27 @@ function inferTarget(parsed) {
     targetType = "project";
     id = id ?? safePathId(routePath[projectIndex + 1]);
   } else if (markerIndex >= 0) {
-    targetType = "thread";
+    // ChatGPT task routes are not conversation history. Keep them distinct so
+    // the UI can explain why a /s/ link cannot provide turns.
+    targetType = provider === "chatgpt" && ["task", "tasks", "run", "runs"].includes(lowerPath[markerIndex])
+      ? "scheduled_task"
+      : "thread";
     id = id ?? safePathId(routePath[markerIndex + 1]);
   } else if (
     provider === "chatgpt"
     && routePath.length >= 2
-    && ["share", "s"].includes(lowerPath[0])
+    && lowerPath[0] === "share"
   ) {
     targetType = "thread";
+    id = safePathId(routePath[1]);
+  } else if (
+    provider === "chatgpt"
+    && routePath.length >= 2
+    && lowerPath[0] === "s"
+  ) {
+    // OpenAI documents /s/ as a shared scheduled-task link, not a shared
+    // conversation link. It does not expose conversation turns for this app.
+    targetType = "scheduled_task";
     id = safePathId(routePath[1]);
   }
 
@@ -239,6 +252,9 @@ export function contextFingerprint(payload) {
 
 export function fallbackInstruction(target, reason) {
   const label = target?.provider === "codex" ? "Codex" : target?.provider === "chatgpt" ? "ChatGPT" : "目标";
+  if (target?.provider === "chatgpt" && target?.targetType === "scheduled_task") {
+    return `这个链接是 ChatGPT 的共享任务链接（/s/），不是可读取的对话历史。请在 ChatGPT 对话中使用“分享”生成 https://chatgpt.com/share/... 链接，或直接回到原对话调用 Context Prompt Assistant；只输出优化后的提示词、待确认问题和上下文状态，暂不执行。\n\n当前链接未能自动读取：${reason}`;
+  }
   return `请在这个 ${label} 项目或对话中显式调用 Context Prompt Assistant，回看当前可见的相关上下文，优化我下一条指令；只输出优化后的提示词、待确认问题和上下文状态，暂不执行。\n\n当前链接未能自动读取：${reason}`;
 }
 
