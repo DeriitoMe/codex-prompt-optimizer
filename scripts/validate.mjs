@@ -14,6 +14,7 @@ const required = [
   "scripts/server.mjs",
   "scripts/optimizer.mjs",
   "scripts/app-server-diagnostics.mjs",
+  "scripts/register-codex-autostart.ps1",
   "desktop/main.cjs",
   "desktop/preload.cjs",
   "desktop/index.html",

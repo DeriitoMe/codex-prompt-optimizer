@@ -1,4 +1,5 @@
 const { app, BrowserWindow, ipcMain, clipboard, shell } = require("electron");
+const { execFile } = require("node:child_process");
 const path = require("node:path");
 const { pathToFileURL } = require("node:url");
 
@@ -6,8 +7,11 @@ let mainWindow;
 let contextModule;
 let appServerModule;
 let optimizerModule;
+let codexWatcher;
+let codexWasRunning = false;
 const bindings = new Map();
 const activeOptimizations = new Map();
+const watchCodex = process.argv.includes("--watch-codex");
 
 async function modules() {
   if (!contextModule) contextModule = await import(pathToFileURL(path.join(__dirname, "..", "scripts", "context.mjs")));
@@ -27,6 +31,33 @@ function createWindow() {
     if (!url.startsWith("file:")) event.preventDefault();
   });
   mainWindow.loadFile(path.join(__dirname, "index.html"));
+}
+
+function isCodexRunning() {
+  if (process.platform !== "win32") return Promise.resolve(false);
+  return new Promise((resolve) => {
+    execFile("tasklist.exe", ["/FI", "IMAGENAME eq codex.exe", "/FO", "CSV", "/NH"], { windowsHide: true }, (error, stdout) => {
+      if (error) return resolve(false);
+      resolve(/"codex\.exe"/i.test(String(stdout)));
+    });
+  });
+}
+
+async function watchCodexProcess() {
+  const running = await isCodexRunning();
+  if (running && !codexWasRunning) {
+    if (!mainWindow || mainWindow.isDestroyed()) createWindow();
+    else mainWindow.show();
+    mainWindow?.focus();
+  } else if (!running && codexWasRunning && mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.hide();
+  }
+  codexWasRunning = running;
+}
+
+function startCodexWatcher() {
+  void watchCodexProcess();
+  codexWatcher = setInterval(() => void watchCodexProcess(), 1500);
 }
 
 async function readContext(url, maxChars = 24000) {
@@ -72,5 +103,13 @@ ipcMain.handle("copy", (_event, value) => { clipboard.writeText(String(value || 
 ipcMain.handle("set-always-on-top", (_event, enabled) => { mainWindow?.setAlwaysOnTop(Boolean(enabled)); return Boolean(enabled); });
 ipcMain.handle("open-link", (_event, url) => shell.openExternal(String(url)));
 
-app.whenReady().then(() => { createWindow(); app.on("activate", () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); }); });
-app.on("window-all-closed", () => { if (process.platform !== "darwin") app.quit(); });
+app.whenReady().then(() => {
+  if (watchCodex) startCodexWatcher();
+  else createWindow();
+  app.on("activate", () => {
+    if (BrowserWindow.getAllWindows().length === 0 && !watchCodex) createWindow();
+    else mainWindow?.show();
+  });
+});
+app.on("before-quit", () => { if (codexWatcher) clearInterval(codexWatcher); });
+app.on("window-all-closed", () => { if (process.platform !== "darwin" && !watchCodex) app.quit(); });

@@ -8,6 +8,7 @@
 - 增加 Codex／ChatGPT 链接解析、上下文覆盖标记、长文本截断、目标隔离和刷新失败状态。
 - 增加 Codex 插件清单、只读 MCP 工具、共用 Skill、40 条验收案例和 Windows 打包配置。
 - Windows 自动发现 Codex 桌面 CLI，并支持通过 `CODEX_CLI_PATH` 指定完整路径。
+- 增加可选的 Windows 启动监视器：检测到 `codex.exe` 时显示伴随窗口，支持注册和移除启动项。
 
 ### 已知边界
 

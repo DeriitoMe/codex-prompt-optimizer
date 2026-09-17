@@ -58,7 +58,7 @@
 
 ## E. Windows 伴随窗口
 
-前置：执行 `npm ci` 后运行 `npm run dev`，确认本机 Codex CLI 已登录。若未安装 Electron 二进制，记录为“环境阻塞”，不能填写“通过”。
+前置：执行 `npm ci` 后运行 `npm.cmd run dev`，确认本机 Codex CLI 已登录。若 PowerShell 拒绝执行 `npm.ps1`，使用 `npm.cmd` 或当前会话的 `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass`；这类错误不代表应用启动失败。若未安装 Electron 二进制，记录为“环境阻塞”，不能填写“通过”。
 
 说明：插件或 Skill 被调用不会自动打开这个独立窗口；测试时必须手动启动开发命令、便携包或已安装的开始菜单快捷方式。窗口不嵌入 Codex 主窗口，而是以可置顶的小窗口并排使用。
 
@@ -68,6 +68,15 @@
 2. 检查目标 ID、访问状态和读取范围；再输入“继续完成刚才的修复，并补上测试”，按 Ctrl+Enter。
 3. 点击“复制”，粘贴到纯文本编辑器核对结果；切换置顶并重启应用。
 4. 绑定第二个目标，再次优化，确认前一个目标的正文没有混入。
+
+**自动启动监视器（需人工确认）：**
+
+1. 使用 `scripts/register-codex-autostart.ps1` 注册一个指向伴随应用并带 `--watch-codex` 参数的 Windows 启动快捷方式。
+2. 注销当前 Windows 用户后重新登录，确认监视器在没有 Codex 时不显示窗口。
+3. 启动 Codex，等待最多 5 秒，确认伴随窗口显示；关闭 Codex 后窗口应隐藏。
+4. 再次启动 Codex，确认窗口可以重新显示；运行 `-Uninstall` 后重登，确认不再自动启动监视器。
+
+通过标准：窗口只在检测到 `codex.exe` 后显示；监视器没有修改 Codex 任务、发送消息或写入源项目。若你的 Codex 桌面进程名称不是 `codex.exe`，记录为兼容性缺口，不要填写“通过”。
 
 预期：
 

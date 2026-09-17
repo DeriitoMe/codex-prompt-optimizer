@@ -45,12 +45,38 @@ node scripts/app-server-diagnostics.mjs
 启动窗口：
 
 ```powershell
-npm run dev
+npm.cmd run dev
 ```
 
 插件被调用时不会自动弹出 Electron 窗口：Skill/MCP 运行在 Codex 对话内，伴随窗口是独立客户端。日常使用请从开始菜单启动已安装的 `Context Prompt Assistant`，或在项目目录运行上面的命令；安装包位于 `release/`。
 
 如果 `npm run dev` 后没有看到窗口，可直接运行 `node_modules\\electron\\dist\\electron.exe .` 检查开发环境，或启动 `release\\Context Prompt Assistant-0.2.0-x64-portable.exe`。窗口创建后会在 Codex 旁边独立显示，不会嵌入 Codex 主窗口。
+
+如果 PowerShell 报“禁止运行 npm.ps1”，这是执行策略拦截了 PowerShell shim，项目本身还没有启动。可以使用上面的 `npm.cmd run dev`，或者只对当前窗口临时放行：
+
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+npm run dev
+```
+
+也可以双击仓库根目录的 `open-companion.cmd`。
+
+### 随 Codex 启动自动打开
+
+自动弹窗需要一个在 Windows 启动时运行的轻量监视器。它不会修改 Codex，也不会向任务发送消息；检测到 `codex.exe` 后才显示伴随窗口，Codex 关闭后窗口隐藏。请显式执行下面的注册命令（无需管理员权限）：
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\\scripts\\register-codex-autostart.ps1 `
+  -ExecutablePath (Resolve-Path '.\\release\\Context Prompt Assistant-0.2.0-x64-portable.exe').Path
+```
+
+移除自动启动项：
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\\scripts\\register-codex-autostart.ps1 -Uninstall
+```
+
+这是可选的 Windows 启动项，不会在你未执行注册命令时改变系统设置。
 
 构建 Windows 安装包和便携包：
 
