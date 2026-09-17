@@ -3,6 +3,11 @@ const { execFile } = require("node:child_process");
 const path = require("node:path");
 const { pathToFileURL } = require("node:url");
 
+// The companion window is intentionally light and CSS-driven. Disabling
+// Chromium GPU startup avoids a native graphics-driver crash on some Windows
+// machines (0x80000003) while keeping the UI and its frosted layers intact.
+if (process.platform === "win32") app.disableHardwareAcceleration();
+
 let mainWindow;
 let contextModule;
 let appServerModule;
