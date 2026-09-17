@@ -59,6 +59,7 @@ let watchInFlight = false;
 let lastCodexStatus = { state: "unknown", reason: "not_checked" };
 let isQuitting = false;
 let shortcutRegistered = false;
+const launchCodexOnStart = process.argv.includes("--launch-codex");
 const bindings = new Map();
 const activeOptimizations = new Map();
 
@@ -66,8 +67,9 @@ const hasSingleInstance = app.requestSingleInstanceLock();
 if (!hasSingleInstance) {
   app.quit();
 } else {
-  app.on("second-instance", () => {
+  app.on("second-instance", (_event, commandLine) => {
     showWindow({ focus: true });
+    if (commandLine.includes("--launch-codex")) void launchCodex();
   });
 }
 
@@ -479,6 +481,7 @@ if (hasSingleInstance) {
     createTray();
     registerGlobalShortcut();
     if (watcherEnabled) startCodexWatcher(); else createWindow();
+    if (launchCodexOnStart) void launchCodex();
     app.on("activate", () => showWindow({ focus: true }));
   });
 }

@@ -28,6 +28,7 @@ const required = [
   "CHANGELOG.md",
   "register-codex-autostart.cmd",
   "unregister-codex-autostart.cmd",
+  "launch-codex-with-assistant.cmd",
 ];
 for (const relative of required) {
   if (!fs.existsSync(path.join(root, relative))) throw new Error(`Missing ${relative}`);
