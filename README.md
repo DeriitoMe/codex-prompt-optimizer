@@ -33,6 +33,15 @@ npm test
 npm run validate
 ```
 
+如果 PowerShell 提示找不到 `codex`，先打开一次 Codex 桌面客户端；应用会自动检查 `%LOCALAPPDATA%\OpenAI\Codex\bin`。仍找不到时，可临时指定完整路径：
+
+```powershell
+$env:CODEX_CLI_PATH = "$env:LOCALAPPDATA\OpenAI\Codex\bin\<版本目录>\codex.exe"
+node scripts/app-server-diagnostics.mjs
+```
+
+不要把 `auth.json`、访问令牌或任何凭据提交到仓库；诊断输出只反馈状态、线程 ID 和轮次统计。
+
 启动窗口：
 
 ```powershell

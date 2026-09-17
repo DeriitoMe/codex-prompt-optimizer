@@ -1,6 +1,7 @@
 import { spawn } from "node:child_process";
 import readline from "node:readline";
 import { extractText } from "./context.mjs";
+import { describeCodexCliError, resolveCodexCli } from "./codex-cli.mjs";
 
 const DEFAULT_TIMEOUT_MS = 120000;
 
@@ -40,7 +41,7 @@ function buildPrompt({ draft, contextText = "", contextStatus = "" }) {
 export function optimizePrompt(options = {}) {
   const draft = typeof options.draft === "string" ? options.draft.trim() : "";
   if (!draft) return Promise.reject(new Error("draft_required"));
-  const cli = options.cliPath || process.env.CODEX_CLI_PATH || "codex";
+  const cli = resolveCodexCli({ cliPath: options.cliPath });
   const args = [
     "exec", "--json", "--color", "never", "--sandbox", "read-only",
     "--ephemeral", "--skip-git-repo-check",
@@ -71,13 +72,16 @@ export function optimizePrompt(options = {}) {
       clearTimeout(timer);
       if (error) {
         child.kill();
-        error.details = stderr.trim().slice(-1500);
+        error.details = [error.details, stderr.trim().slice(-1500)].filter(Boolean).join("\n");
         reject(error);
       } else {
         resolve(value);
       }
     };
-    child.on("error", (error) => finish(error));
+    child.on("error", (error) => {
+      const detail = describeCodexCliError(error, cli);
+      finish(Object.assign(new Error(detail.reason), { code: error.code, details: detail.hint }));
+    });
     options.signal?.addEventListener("abort", () => finish(new Error("optimizer_cancelled")), { once: true });
     child.stdin.end(prompt);
     child.stderr.on("data", (chunk) => { stderr += String(chunk); });

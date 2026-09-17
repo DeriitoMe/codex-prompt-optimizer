@@ -36,6 +36,8 @@ function showContext() {
 async function bind() {
   const raw = urlInput.value.trim();
   if (!raw) return;
+  target.textContent = "正在解析并读取目标…";
+  setBadge("检查中", "neutral");
   const parsed = await api.resolveTarget(raw);
   if (!parsed.ok) { context = parsed; setBadge("链接无效", "error"); target.textContent = describe(parsed); return; }
   context = await api.refreshContext({ url: raw });
@@ -78,4 +80,13 @@ $("pin").addEventListener("click", async (event) => { pinned = !pinned; event.cu
 draft.addEventListener("keydown", (event) => { if ((event.ctrlKey || event.metaKey) && event.key === "Enter") optimize(); });
 
 const saved = localStorage.getItem("contextPromptTarget");
-if (saved) urlInput.value = saved;
+if (saved) {
+  urlInput.value = saved;
+  // Restoring the URL also restores the target's current access state. The
+  // read is deliberately repeated after restart so an old local value cannot
+  // be presented as fresh context.
+  void bind().catch((error) => {
+    context = { ok: false, access: "unavailable", reason: error?.message || "context_restore_failed" };
+    showContext();
+  });
+}

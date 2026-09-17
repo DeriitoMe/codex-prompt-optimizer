@@ -1,5 +1,6 @@
 import { spawn } from "node:child_process";
 import readline from "node:readline";
+import { describeCodexCliError, resolveCodexCli } from "./codex-cli.mjs";
 
 const DEFAULT_TIMEOUT_MS = 15000;
 
@@ -7,7 +8,7 @@ function commandConfig() {
   // A nested Codex app-server may load this plugin again. Never let a nested
   // instance recursively start another app-server process.
   if (process.env.CONTEXT_PROMPT_ASSISTANT_NESTED === "1") return null;
-  const cli = process.env.CODEX_CLI_PATH || "codex";
+  const cli = resolveCodexCli();
   const socket = process.env.CODEX_APP_SERVER_SOCKET;
   // The proxy command uses Codex's default local control socket when no path
   // is supplied. This is the zero-configuration path inside a running Codex
@@ -52,13 +53,16 @@ export async function readCodexThread(threadId, options = {}) {
       clearTimeout(timer);
       proc.kill();
       if (error) {
-        error.details = stderr.trim().slice(-1000);
+        error.details = [error.details, stderr.trim().slice(-1000)].filter(Boolean).join("\n");
         reject(error);
       } else {
         resolve(value);
       }
     };
-    proc.on("error", (error) => finish(error));
+    proc.on("error", (error) => finish(Object.assign(new Error(describeCodexCliError(error, config.cli).reason), {
+      code: error.code,
+      details: describeCodexCliError(error, config.cli).hint,
+    })));
     proc.stderr.on("data", (chunk) => { stderr += String(chunk); });
     proc.on("exit", (code) => {
       if (!settled) finish(new Error(`codex_app_server_exit_${code ?? "unknown"}`));

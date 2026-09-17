@@ -89,6 +89,14 @@
 ### 用户测试步骤
 
 1. 在与 Codex 相同的 Windows 用户环境打开 PowerShell，运行 `codex login status`。应显示当前登录方式和账号状态；不要把任何 token 或 `auth.json` 内容发出来。
+   如果提示“无法将 codex 识别为 cmdlet”，先打开 Codex 桌面客户端；本项目会自动搜索 `%LOCALAPPDATA%\\OpenAI\\Codex\\bin`。仍无法找到时，在同一个 PowerShell 会话设置：
+
+   ```powershell
+   $env:CODEX_CLI_PATH = "$env:LOCALAPPDATA\\OpenAI\\Codex\\bin\\<版本目录>\\codex.exe"
+   codex login status
+   ```
+
+   `<版本目录>` 只替换为本机实际目录名，不要把路径或认证文件内容贴回。
 2. 进入项目目录并列出最近任务：
 
    ```powershell

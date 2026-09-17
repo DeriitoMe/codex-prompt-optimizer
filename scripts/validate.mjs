@@ -10,6 +10,7 @@ const required = [
   "skills/context-prompt-assistant/agents/openai.yaml",
   "scripts/context.mjs",
   "scripts/codex-app-server.mjs",
+  "scripts/codex-cli.mjs",
   "scripts/server.mjs",
   "scripts/optimizer.mjs",
   "scripts/app-server-diagnostics.mjs",

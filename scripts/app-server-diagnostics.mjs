@@ -1,13 +1,14 @@
 #!/usr/bin/env node
 import { spawn } from "node:child_process";
 import readline from "node:readline";
+import { describeCodexCliError, resolveCodexCli } from "./codex-cli.mjs";
 
 const args = process.argv.slice(2);
 const readIndex = args.indexOf("--read");
 const readId = readIndex >= 0 ? args[readIndex + 1] : null;
 const method = readId ? "thread/read" : "thread/list";
 const params = readId ? { threadId: readId, includeTurns: true } : { limit: 10, sortDirection: "desc" };
-const cli = process.env.CODEX_CLI_PATH || "codex";
+const cli = resolveCodexCli();
 const child = spawn(cli, ["app-server", "--listen", "stdio://"], {
   windowsHide: true,
   stdio: ["pipe", "pipe", "pipe"],
@@ -26,7 +27,10 @@ const finish = (value, code = 0) => {
 const timer = setTimeout(() => finish({ ok: false, reason: "diagnostics_timeout", stderr: stderr.slice(-1000) }, 1), 20000);
 const send = (message) => child.stdin.write(`${JSON.stringify(message)}\n`);
 
-child.on("error", (error) => { clearTimeout(timer); finish({ ok: false, reason: error.message }, 1); });
+child.on("error", (error) => {
+  clearTimeout(timer);
+  finish({ ok: false, ...describeCodexCliError(error, cli) }, 1);
+});
 child.stderr.on("data", (chunk) => { stderr += String(chunk); });
 const rl = readline.createInterface({ input: child.stdout });
 rl.on("line", (line) => {
