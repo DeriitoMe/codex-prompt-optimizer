@@ -1,0 +1,34 @@
+{
+  "name": "context-prompt-assistant",
+  "version": "0.2.0",
+  "description": "保留原意并结合 Codex／ChatGPT 项目上下文优化下一条提示词。",
+  "author": {
+    "name": "Context Prompt Assistant contributors"
+  },
+  "license": "MIT",
+  "keywords": [
+    "prompt",
+    "codex",
+    "chatgpt",
+    "context",
+    "coding"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Context Prompt Assistant",
+    "shortDescription": "结合项目上下文优化 Codex 和 ChatGPT 指令",
+    "longDescription": "在当前对话中保留原意、还原指代并补全必要约束；也可解析 Codex 或 ChatGPT 链接并报告可访问的上下文范围。",
+    "developerName": "Local developer",
+    "category": "Productivity",
+    "capabilities": [
+      "Analyze",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "优化下一条 Codex 指令，只输出提示词，暂不执行。",
+      "结合当前对话上下文优化这段开发需求。",
+      "读取这个任务链接并优化我的下一条指令。"
+    ]
+  },
+  "mcpServers": "./.mcp.json"
+}

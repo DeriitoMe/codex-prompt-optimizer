@@ -1,0 +1,4 @@
+interface:
+  display_name: "Context Prompt Assistant"
+  short_description: "结合 Codex／ChatGPT 上下文优化下一条指令"
+  default_prompt: "优化我下一条要交给 Codex 或 ChatGPT 的指令，只输出提示词、待确认问题和上下文状态，暂不执行。"

@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "context_prompt": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "./scripts/server.mjs"
+      ],
+      "cwd": ".",
+      "enabled": true,
+      "default_tools_approval_mode": "approve",
+      "startup_timeout_sec": 10,
+      "tool_timeout_sec": 30
+    }
+  }
+}

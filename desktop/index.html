@@ -1,0 +1,10 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'none'; object-src 'none';" /><title>Context Prompt Assistant</title><link rel="stylesheet" href="./styles.css" /></head>
+<body><main class="shell">
+  <header><div><p class="eyebrow">CODEX COMPANION</p><h1>提示词优化助手</h1></div><button id="pin" class="icon" title="切换置顶状态">置顶</button></header>
+  <section class="card binding"><div class="section-title"><span>上下文目标</span><span id="context-badge" class="badge neutral">未绑定</span></div><div class="row"><input id="url" type="url" placeholder="粘贴 Codex 项目／任务链接" autocomplete="off" /><button id="bind">绑定</button></div><div id="target" class="meta">每次优化前会重新检查可访问范围。</div></section>
+  <section class="card"><div class="section-title"><span>待优化原话</span><span class="hint">Ctrl + Enter 优化</span></div><textarea id="draft" placeholder="例如：把刚才那个页面改紧凑点，之前说的功能别删"></textarea><div class="actions"><button id="cancel" disabled>取消</button><button id="optimize" class="primary">优化提示词</button><button id="clear">清空</button></div></section>
+  <section class="card result-card"><div class="section-title"><span>优化结果</span><button id="copy" class="small" disabled>复制</button></div><pre id="result" class="result">尚未生成结果。</pre><div id="status" class="status"></div></section>
+  <footer>只生成提示词，不修改项目、不续跑任务、不自动发送。ChatGPT 私有链接需以实际可读性为准。</footer>
+</main><script src="./renderer.js"></script></body></html>

@@ -1,0 +1,13 @@
+node_modules/
+.cache/
+dist/
+out/
+*.log
+.DS_Store
+release/*.exe
+release/*.zip
+release/win-unpacked/
+release/builder-debug.yml
+release/*.7z
+release/*.blockmap
+release/latest.yml
