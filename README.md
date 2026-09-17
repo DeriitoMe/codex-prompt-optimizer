@@ -58,7 +58,7 @@ npm run dev
 npm run package:win
 ```
 
-输出在 `release/`。构建机需要能下载 Electron 二进制；网络受限时可先运行不依赖 Electron 的三项检查。
+输出在 `release/`。当前个人版构建默认不做 Windows 代码签名，首次启动可能显示系统的未知发布者提示；正式公开分发前应配置自己的签名证书。构建机需要能下载 Electron 二进制；网络受限时可先运行不依赖 Electron 的三项检查。
 
 ## 使用
 

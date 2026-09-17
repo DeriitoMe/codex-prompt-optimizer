@@ -27,7 +27,7 @@
     "productName": "Context Prompt Assistant",
     "directories": { "output": "release" },
     "files": ["desktop/**/*", "scripts/**/*", "skills/**/*", ".codex-plugin/**/*", ".mcp.json", "README.md", "LICENSE", "CHANGELOG.md"],
-    "win": { "target": ["nsis", "portable"] },
+    "win": { "target": ["nsis", "portable"], "signExecutable": false },
     "nsis": { "oneClick": false, "allowToChangeInstallationDirectory": true, "createDesktopShortcut": true, "artifactName": "${productName}-${version}-${arch}-setup.${ext}" },
     "portable": { "artifactName": "${productName}-${version}-${arch}-portable.${ext}" }
   }
