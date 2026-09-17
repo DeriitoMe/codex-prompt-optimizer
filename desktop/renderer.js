@@ -19,20 +19,30 @@ function setBadge(text, kind = "neutral") {
   badge.className = `badge ${kind}`;
 }
 
+function reasonLabel(reason) {
+  const labels = {
+    chatgpt_scheduled_task_link_not_conversation: "这是共享任务链接，不是对话历史",
+    only_codex_thread_read_is_available_in_this_version: "当前版本只读取 Codex 对话线程",
+    codex_thread_not_found: "找不到对应的 Codex 线程",
+  };
+  return labels[reason] || reason || "当前不可读取";
+}
+
 function describe(payload) {
   if (!payload) return "未绑定目标。";
   const t = payload.target || payload;
   const typeLabel = t.targetType === "scheduled_task" ? "共享任务" : t.targetType === "thread" ? "对话" : t.targetType;
   const scope = [t.provider, typeLabel, t.id].filter(Boolean).join(" / ");
   if (payload.access === "read") { const coverage = payload.coverage?.kind === "full" ? "完整可见内容" : payload.coverage?.kind === "partial" ? "部分内容" : "未提取到可分析文本"; return `${scope} · 已读取 ${payload.coverage?.turns ?? 0} 个轮次，${coverage} · ${payload.checkedAt || "刚刚"}`; }
-  if (payload.access === "stale") return `${scope} · 刷新失败，缓存已过期（${payload.reason || "unknown"}）`;
-  return `${scope} · 当前不可读取（${payload.reason || "unknown"}）`;
+  if (payload.access === "stale") return `${scope} · 刷新失败，缓存已过期（${reasonLabel(payload.reason)}）`;
+  return `${scope} · ${reasonLabel(payload.reason)}`;
 }
 
 function showContext() {
   target.textContent = describe(context);
   const access = context?.access;
   setBadge(access === "read" ? "已读取" : access === "stale" ? "已过期" : "不可读取", access === "read" ? "ok" : access === "stale" ? "warn" : "error");
+  if (access === "unavailable" && context?.fallback) status.textContent = context.fallback;
 }
 
 async function bind() {
