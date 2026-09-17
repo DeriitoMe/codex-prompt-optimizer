@@ -8,81 +8,80 @@
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
-  <div class="app-shell">
-    <aside class="sidebar" aria-label="主导航">
-      <div class="brand-mark" aria-label="Context Prompt Assistant">C</div>
-      <nav class="side-nav">
-        <button class="nav-item active" title="提示词优化" aria-label="提示词优化">
-          <span class="nav-icon">✦</span><span class="nav-label">优化</span>
-        </button>
-        <button class="nav-item" title="上下文目标" aria-label="上下文目标">
-          <span class="nav-icon">⌘</span><span class="nav-label">目标</span>
-        </button>
-      </nav>
-      <div class="sidebar-bottom">
-        <span class="connection-dot" aria-hidden="true"></span>
-        <span>Codex</span>
-      </div>
-    </aside>
+  <div id="app" class="app-shell" data-layout="vertical" data-font-scale="standard">
+    <header class="titlebar" aria-label="窗口标题栏">
+      <div class="titlebar-drag"><span class="titlebar-mark">C</span><span>Context Prompt Assistant</span></div>
+      <span class="titlebar-hint">提示词优化</span>
+    </header>
 
     <main class="workspace">
-      <header class="topbar">
+      <header class="app-header">
         <div class="title-stack">
           <span class="eyebrow">CODEX COMPANION</span>
           <h1>提示词优化助手</h1>
+          <p class="subtitle">把下一条指令说清楚，再交给 Codex。</p>
         </div>
-        <div class="top-actions">
+        <div class="header-actions">
           <span id="context-badge" class="badge neutral">未绑定</span>
+          <button id="layout" class="toolbar-button" title="切换竖向／横向布局">竖向</button>
           <button id="pin" class="toolbar-button" title="切换置顶状态">置顶</button>
+          <button id="settings" class="icon-button" title="打开设置" aria-label="打开设置">⚙</button>
         </div>
       </header>
 
-      <section class="target-bar" aria-label="上下文目标">
+      <section class="target-card" aria-label="上下文目标">
         <div class="target-heading">
           <span class="target-icon">⌁</span>
-          <div>
+          <div class="target-copy">
             <div class="target-title">上下文目标</div>
             <div id="target" class="target-meta">每次优化前会重新检查可访问范围。</div>
           </div>
         </div>
         <div class="target-controls">
           <input id="url" type="url" placeholder="粘贴 Codex 或 ChatGPT 分享链接" autocomplete="off" aria-label="Codex 或 ChatGPT 分享链接" />
-          <button id="paste-target" class="paste-button" title="从剪贴板粘贴链接">粘贴</button>
-          <button id="bind" class="secondary-button">绑定</button>
+          <button id="paste-target" class="secondary-button" title="从剪贴板粘贴链接">粘贴</button>
+          <button id="bind" class="primary-outline-button">绑定</button>
         </div>
+        <div class="target-footer">
+          <span id="target-source">支持 Codex 任务和只读共享快照</span>
+          <div class="target-actions"><button id="retry-context" class="text-button" type="button" hidden>重试读取</button><button id="details-toggle" class="text-button" type="button">查看状态</button></div>
+        </div>
+        <div id="target-details" class="target-details" hidden></div>
       </section>
 
-      <section class="conversation" aria-label="提示词工作区">
-        <div class="section-heading">
-          <div>
-            <span class="section-kicker">PROMPT WORKSPACE</span>
-            <h2>把想法交给 Codex 之前，先把指令说清楚</h2>
+      <div id="workspace-grid" class="workspace-grid">
+        <section class="panel prompt-panel" aria-label="待优化原话">
+          <div class="panel-heading">
+            <div>
+              <span class="section-kicker">YOUR DRAFT</span>
+              <h2>待优化原话</h2>
+            </div>
+            <span class="shortcut">Ctrl + Enter</span>
           </div>
-          <span class="shortcut">Ctrl + Enter</span>
-        </div>
-
-        <div class="prompt-card">
-          <div class="prompt-card-label"><span class="composer-dot"></span>待优化原话</div>
           <textarea id="draft" placeholder="例如：把刚才那个页面改紧凑点，之前说的功能别删" aria-label="待优化原话"></textarea>
           <div class="composer-footer">
             <span class="composer-hint">只生成提示词，不会执行原话中的任务</span>
             <div class="composer-actions">
-              <button id="clear" class="ghost-button">清空</button>
-              <button id="cancel" class="ghost-button" disabled>取消</button>
+              <button id="clear" class="text-button">清空</button>
+              <button id="cancel" class="text-button" disabled>取消</button>
+              <button id="optimize-plain" class="text-button" hidden>仅优化原话</button>
               <button id="optimize" class="send-button"><span>优化提示词</span><span class="send-arrow">↗</span></button>
             </div>
           </div>
-        </div>
+        </section>
 
-        <div class="result-panel">
-          <div class="result-heading">
-            <div class="result-title"><span class="result-icon">✧</span><span>优化结果</span></div>
-            <button id="copy" class="copy-button" disabled>复制</button>
+        <section class="panel result-panel" aria-label="优化结果">
+          <div class="panel-heading result-heading">
+            <div>
+              <span class="section-kicker">READY TO COPY</span>
+              <h2><span class="result-icon">✧</span>优化结果</h2>
+            </div>
+            <button id="copy" class="secondary-button" disabled>复制</button>
           </div>
           <pre id="result" class="result">尚未生成结果。</pre>
-          <div id="status" class="status"></div>
-        </div>
-      </section>
+          <div id="status" class="status" role="status" aria-live="polite"></div>
+        </section>
+      </div>
 
       <footer class="safety-note">
         <span class="shield">⌑</span>
@@ -90,6 +89,18 @@
       </footer>
     </main>
   </div>
+
+  <dialog id="settings-dialog" class="settings-dialog">
+    <form method="dialog" class="settings-card">
+      <div class="settings-heading"><div><span class="section-kicker">PREFERENCES</span><h2>设置</h2></div><button id="close-settings" class="icon-button" value="cancel" aria-label="关闭设置">×</button></div>
+      <label class="setting-row"><span><strong>随 Codex 自动显示</strong><small>登录 Windows 后后台待命，检测到 Codex 才显示助手。</small></span><input id="auto-show" type="checkbox" /></label>
+      <label class="setting-row"><span><strong>默认字体</strong><small>大字模式会增加正文阅读尺寸。</small></span><select id="font-scale"><option value="standard">标准</option><option value="large">大字</option></select></label>
+      <div class="setting-row setting-stack"><span><strong>Codex 程序路径</strong><small id="codex-path">自动发现或使用 Codex 协议启动。</small></span><button id="choose-codex" class="secondary-button" type="button">选择程序</button></div>
+      <div class="settings-actions"><button id="run-diagnostics" class="secondary-button" type="button">运行启动诊断</button><button id="launch-codex" class="primary-button" type="button">启动 Codex</button></div>
+      <pre id="diagnostics-output" class="diagnostics-output" hidden></pre>
+      <div id="settings-status" class="settings-status" role="status"></div>
+    </form>
+  </dialog>
   <script src="./renderer.js"></script>
 </body>
 </html>

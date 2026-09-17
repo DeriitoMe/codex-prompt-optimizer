@@ -25,11 +25,11 @@ cd D:\CodexProjects\context-prompt-assistant
 git init -b main
 git add .
 git status
-git commit -m "Release context prompt assistant 0.2.0"
+git commit -m "Release context prompt assistant 0.3.0"
 git remote add origin https://github.com/DeriitoMe/codex-prompt-optimizer.git
 git push -u origin main
-git tag v0.2.0
-git push origin v0.2.0
+git tag v0.3.0
+git push origin v0.3.0
 ```
 
 如果本地已经初始化过 Git，不要重复执行 `git init` 或 `git remote add`；先用 `git remote -v` 检查远程地址。
@@ -38,11 +38,11 @@ git push origin v0.2.0
 
 源码仓库中保留源码和构建配置，Windows 安装包放在 GitHub Release 的附件中：
 
-- `Context Prompt Assistant-0.2.0-x64-setup.exe`
-- `Context Prompt Assistant-0.2.0-x64-portable.exe`
-- `context-prompt-assistant-v0.2.0.zip`
+- `Context Prompt Assistant-0.3.0-x64-setup.exe`
+- `Context Prompt Assistant-0.3.0-x64-portable.exe`
+- `context-prompt-assistant-v0.3.0.zip`
 
-Release 标题建议为 `v0.2.0 — Windows companion app and Codex plugin`。发布说明必须明确：这是第三方项目；Codex App Server 历史读取需要本地账号和客户端实测；ChatGPT 私有链接暂不保证自动读取。
+Release 标题建议为 `v0.3.0 — Windows companion app and Codex plugin`。发布说明必须明确：这是第三方项目；Codex App Server 历史读取需要本地账号和客户端实测；ChatGPT 私有链接暂不保证自动读取。
 
 ## 推送前检查
 

@@ -6,8 +6,8 @@ import { fileURLToPath } from "node:url";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const releaseDir = path.join(root, "release");
 const artifacts = [
-  "Context Prompt Assistant-0.2.0-x64-portable.exe",
-  "Context Prompt Assistant-0.2.0-x64-setup.exe",
+  "Context Prompt Assistant-0.3.0-x64-portable.exe",
+  "Context Prompt Assistant-0.3.0-x64-setup.exe",
 ];
 
 const rows = [];

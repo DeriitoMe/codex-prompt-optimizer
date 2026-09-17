@@ -1,6 +1,6 @@
 {
   "name": "context-prompt-assistant",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "保留原意并结合 Codex／ChatGPT 项目上下文优化下一条提示词。",
   "author": {
     "name": "Context Prompt Assistant contributors"

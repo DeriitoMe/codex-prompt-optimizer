@@ -72,7 +72,7 @@
 
 **自动启动监视器（需人工确认）：**
 
-1. 使用 `scripts/register-codex-autostart.ps1` 注册一个指向伴随应用并带 `--watch-codex` 参数的 Windows 启动快捷方式。
+1. 使用 `scripts/register-codex-autostart.ps1` 注册一个指向伴随应用并带 `--watch-codex` 参数的当前用户 Windows 启动项。
 2. 注销当前 Windows 用户后重新登录，确认监视器在没有 Codex 时不显示窗口。
 3. 启动 Codex，等待最多 5 秒，确认伴随窗口显示；关闭 Codex 后窗口应隐藏。
 4. 再次启动 Codex，确认窗口可以重新显示；运行 `-Uninstall` 后重登，确认不再自动启动监视器。

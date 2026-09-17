@@ -136,7 +136,7 @@ async function handle(message) {
     send({ id: message.id, result: {
       protocolVersion: "2024-11-05",
       capabilities: { tools: {} },
-      serverInfo: { name: "context-prompt-assistant", version: "0.2.0" },
+      serverInfo: { name: "context-prompt-assistant", version: "0.3.0" },
     } });
     return;
   }
