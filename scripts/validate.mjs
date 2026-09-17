@@ -21,6 +21,7 @@ const required = [
   "docs/acceptance-checklist.md",
   "test/cases.json",
   "docs/github-repository-template.md",
+  "CHANGELOG.md",
 ];
 for (const relative of required) {
   if (!fs.existsSync(path.join(root, relative))) throw new Error(`Missing ${relative}`);
