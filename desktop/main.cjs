@@ -18,8 +18,8 @@ async function modules() {
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 520, height: 760, minWidth: 380, minHeight: 520,
-    title: "Context Prompt Assistant", backgroundColor: "#10131a",
+    width: 640, height: 820, minWidth: 520, minHeight: 620,
+    title: "Context Prompt Assistant", backgroundColor: "#17181c", autoHideMenuBar: true,
     webPreferences: { preload: path.join(__dirname, "preload.cjs"), contextIsolation: true, nodeIntegration: false, sandbox: true },
   });
   mainWindow.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
