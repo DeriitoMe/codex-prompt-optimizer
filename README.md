@@ -78,6 +78,12 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\\scripts\\register-cod
 
 也可以直接双击仓库根目录的 `register-codex-autostart.cmd` 注册，或双击 `unregister-codex-autostart.cmd` 移除，避免 PowerShell 多行命令输入问题。
 
+如果从其他目录执行 PowerShell，必须使用绝对路径；例如：
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "D:\CodexProjects\context-prompt-assistant\scripts\register-codex-autostart.ps1" -ExecutablePath "D:\CodexProjects\context-prompt-assistant\release\Context Prompt Assistant-0.2.0-x64-portable.exe"
+```
+
 这是可选的 Windows 启动项，不会在你未执行注册命令时改变系统设置。
 
 构建 Windows 安装包和便携包：

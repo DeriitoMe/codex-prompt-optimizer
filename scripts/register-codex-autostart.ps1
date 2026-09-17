@@ -21,8 +21,13 @@ if ($Uninstall) {
 
 if (-not $ExecutablePath) {
   $repoRoot = Split-Path -Parent $PSScriptRoot
-  $candidate = Join-Path $repoRoot 'release\Context Prompt Assistant-0.2.0-x64-portable.exe'
-  if (Test-Path -LiteralPath $candidate) { $ExecutablePath = $candidate }
+  $localAppData = [Environment]::GetFolderPath('LocalApplicationData')
+  $candidates = @(
+    (Join-Path $repoRoot 'release\Context Prompt Assistant-0.2.0-x64-portable.exe'),
+    (Join-Path $localAppData 'Programs\Context Prompt Assistant\Context Prompt Assistant.exe'),
+    (Join-Path $localAppData 'Programs\context-prompt-assistant\Context Prompt Assistant.exe')
+  )
+  $ExecutablePath = $candidates | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
 }
 
 if (-not $ExecutablePath -or -not (Test-Path -LiteralPath $ExecutablePath)) {
