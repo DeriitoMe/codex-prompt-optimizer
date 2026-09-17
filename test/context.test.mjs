@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
-import { contextFingerprint, fallbackInstruction, normalizeCodexThread, resolveContextTarget } from "../scripts/context.mjs";
+import { contextFingerprint, fallbackInstruction, normalizeCodexThread, normalizeSharedSnapshot, resolveContextTarget } from "../scripts/context.mjs";
 
 test("parses Codex thread and strips query values from normalized URL", () => {
   const target = resolveContextTarget("codex://thread/thr_123?token=secret&title=Build");
@@ -35,6 +35,14 @@ test("recognizes Codex shared-thread deep links", () => {
   assert.equal(target.provider, "codex");
   assert.equal(target.targetType, "shared_snapshot");
   assert.equal(target.id, "cx_0123456789abcdef0123456789abcdef");
+});
+
+test("normalizes shared snapshot text without claiming turn completeness", () => {
+  const normalized = normalizeSharedSnapshot("Codex shared snapshot\nUser: keep the prompt read-only", 1000);
+  assert.equal(normalized.source, "codex-shared-snapshot");
+  assert.equal(normalized.coverage.kind, "partial");
+  assert.equal(normalized.coverage.turns, null);
+  assert.match(normalized.text, /keep the prompt read-only/);
 });
 
 test("parses the public ChatGPT share route for paste-and-status handling", () => {
