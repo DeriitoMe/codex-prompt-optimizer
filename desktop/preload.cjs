@@ -5,6 +5,7 @@ contextBridge.exposeInMainWorld("contextPromptAssistant", {
   optimize: (payload) => ipcRenderer.invoke("optimize", payload),
   cancelOptimize: (requestId) => ipcRenderer.invoke("cancel-optimize", requestId),
   copy: (text) => ipcRenderer.invoke("copy", text),
+  readClipboard: () => ipcRenderer.invoke("read-clipboard"),
   setAlwaysOnTop: (enabled) => ipcRenderer.invoke("set-always-on-top", enabled),
   openLink: (url) => ipcRenderer.invoke("open-link", url),
 });

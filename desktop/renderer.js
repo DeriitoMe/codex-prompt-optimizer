@@ -9,6 +9,7 @@ const status = $("status");
 const copy = $("copy");
 const cancel = $("cancel");
 const optimizeButton = $("optimize");
+const pasteTarget = $("paste-target");
 let context = null;
 let pinned = false;
 let requestId = null;
@@ -72,6 +73,15 @@ async function optimize() {
 }
 
 $("bind").addEventListener("click", bind);
+pasteTarget.addEventListener("click", async () => {
+  const value = await api.readClipboard();
+  if (!value.trim()) {
+    status.textContent = "剪贴板中没有可粘贴的文本。";
+    return;
+  }
+  urlInput.value = value.trim();
+  status.textContent = "已从剪贴板粘贴链接，点击“绑定”检查上下文。";
+});
 $("optimize").addEventListener("click", optimize);
 cancel.addEventListener("click", () => { if (requestId) api.cancelOptimize(requestId); });
 $("clear").addEventListener("click", () => { draft.value = ""; result.textContent = "尚未生成结果。"; status.textContent = ""; copy.disabled = true; });

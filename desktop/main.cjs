@@ -100,6 +100,7 @@ ipcMain.handle("optimize", async (_event, payload) => {
 });
 ipcMain.handle("cancel-optimize", (_event, requestId) => { const controller = activeOptimizations.get(String(requestId)); controller?.abort(); return Boolean(controller); });
 ipcMain.handle("copy", (_event, value) => { clipboard.writeText(String(value || "")); return true; });
+ipcMain.handle("read-clipboard", () => clipboard.readText());
 ipcMain.handle("set-always-on-top", (_event, enabled) => { mainWindow?.setAlwaysOnTop(Boolean(enabled)); return Boolean(enabled); });
 ipcMain.handle("open-link", (_event, url) => shell.openExternal(String(url)));
 

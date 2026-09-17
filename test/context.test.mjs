@@ -29,6 +29,14 @@ test("parses ChatGPT shared conversation links", () => {
   assert.equal(target.access, "unverified");
 });
 
+test("parses the public ChatGPT share route for paste-and-status handling", () => {
+  const target = resolveContextTarget("https://chatgpt.com/share/abc123");
+  assert.equal(target.provider, "chatgpt");
+  assert.equal(target.targetType, "thread");
+  assert.equal(target.id, "abc123");
+  assert.equal(target.access, "unverified");
+});
+
 test("recognizes Codex routes hosted under ChatGPT", () => {
   const target = resolveContextTarget("https://chatgpt.com/codex/tasks/task_123");
   assert.equal(target.provider, "codex");

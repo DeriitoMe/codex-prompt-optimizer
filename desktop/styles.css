@@ -51,6 +51,8 @@ input:focus, textarea:focus { border-color: #81649c; box-shadow: 0 0 0 2px #a879
 input { min-width: 0; width: 100%; border-radius: 8px; padding: 8px 10px; font-size: 11px; }
 .secondary-button { border: 1px solid #4b3d5b; border-radius: 8px; background: #30253b; color: #eadcff; padding: 8px 11px; font-size: 11px; font-weight: 600; }
 .secondary-button:hover { background: #3a2c49; }
+.paste-button { border: 1px solid #343740; border-radius: 8px; background: #22242a; color: #b9bdc7; padding: 8px 9px; font-size: 11px; }
+.paste-button:hover { background: #2b2d34; color: #f0f1f4; }
 
 .conversation { display: flex; flex-direction: column; gap: 12px; }
 .section-heading { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; padding: 6px 2px 2px; }
