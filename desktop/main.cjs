@@ -1,5 +1,6 @@
-const { app, BrowserWindow, ipcMain, clipboard, shell } = require("electron");
+const { app, BrowserWindow, ipcMain, clipboard, shell, screen } = require("electron");
 const { execFile } = require("node:child_process");
+const fs = require("node:fs");
 const path = require("node:path");
 const { pathToFileURL } = require("node:url");
 
@@ -14,6 +15,7 @@ let appServerModule;
 let optimizerModule;
 let codexWatcher;
 let codexWasRunning = false;
+let stateSaveTimer;
 const bindings = new Map();
 const activeOptimizations = new Map();
 const watchCodex = process.argv.includes("--watch-codex");
@@ -25,9 +27,54 @@ async function modules() {
   return { contextModule, appServerModule, optimizerModule };
 }
 
+function windowStatePath() {
+  return path.join(app.getPath("userData"), "window-state.json");
+}
+
+function loadWindowState() {
+  try {
+    const state = JSON.parse(fs.readFileSync(windowStatePath(), "utf8"));
+    const width = Number(state.width);
+    const height = Number(state.height);
+    const x = Number(state.x);
+    const y = Number(state.y);
+    if (!Number.isFinite(width) || !Number.isFinite(height) || width < 520 || height < 620) return {};
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return { width, height };
+    const display = screen.getDisplayNearestPoint({ x, y });
+    const area = display.workArea;
+    return {
+      width: Math.min(Math.max(Math.round(width), 520), Math.max(520, area.width)),
+      height: Math.min(Math.max(Math.round(height), 620), Math.max(620, area.height)),
+      x: Math.min(Math.max(Math.round(x), area.x), area.x + area.width - 520),
+      y: Math.min(Math.max(Math.round(y), area.y), area.y + area.height - 620),
+    };
+  } catch {
+    return {};
+  }
+}
+
+function saveWindowState() {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  try {
+    fs.mkdirSync(path.dirname(windowStatePath()), { recursive: true });
+    fs.writeFileSync(windowStatePath(), JSON.stringify(mainWindow.getBounds(), null, 2), "utf8");
+  } catch {
+    // Persistence is best effort and must never prevent the app from closing.
+  }
+}
+
+function scheduleWindowStateSave() {
+  clearTimeout(stateSaveTimer);
+  stateSaveTimer = setTimeout(saveWindowState, 250);
+}
+
 function createWindow() {
+  const state = loadWindowState();
   mainWindow = new BrowserWindow({
-    width: 640, height: 820, minWidth: 520, minHeight: 620,
+    width: state.width || 640, height: state.height || 820,
+    ...(Number.isFinite(state.x) ? { x: state.x } : {}),
+    ...(Number.isFinite(state.y) ? { y: state.y } : {}),
+    minWidth: 520, minHeight: 620,
     title: "Context Prompt Assistant", backgroundColor: "#edf2f9", autoHideMenuBar: true,
     webPreferences: { preload: path.join(__dirname, "preload.cjs"), contextIsolation: true, nodeIntegration: false, sandbox: true },
   });
@@ -35,7 +82,10 @@ function createWindow() {
   mainWindow.webContents.on("will-navigate", (event, url) => {
     if (!url.startsWith("file:")) event.preventDefault();
   });
+  mainWindow.on("move", scheduleWindowStateSave);
+  mainWindow.on("resize", scheduleWindowStateSave);
   mainWindow.on("close", (event) => {
+    saveWindowState();
     if (watchCodex && !app.isQuitting) {
       event.preventDefault();
       mainWindow.hide();
@@ -196,5 +246,5 @@ app.whenReady().then(() => {
     else mainWindow?.show();
   });
 });
-app.on("before-quit", () => { app.isQuitting = true; if (codexWatcher) clearInterval(codexWatcher); });
+app.on("before-quit", () => { app.isQuitting = true; saveWindowState(); clearTimeout(stateSaveTimer); if (codexWatcher) clearInterval(codexWatcher); });
 app.on("window-all-closed", () => { if (process.platform !== "darwin" && !watchCodex) app.quit(); });
