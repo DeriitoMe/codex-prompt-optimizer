@@ -30,6 +30,12 @@ function createWindow() {
   mainWindow.webContents.on("will-navigate", (event, url) => {
     if (!url.startsWith("file:")) event.preventDefault();
   });
+  mainWindow.on("close", (event) => {
+    if (watchCodex && !app.isQuitting) {
+      event.preventDefault();
+      mainWindow.hide();
+    }
+  });
   mainWindow.loadFile(path.join(__dirname, "index.html"));
 }
 
@@ -112,5 +118,5 @@ app.whenReady().then(() => {
     else mainWindow?.show();
   });
 });
-app.on("before-quit", () => { if (codexWatcher) clearInterval(codexWatcher); });
+app.on("before-quit", () => { app.isQuitting = true; if (codexWatcher) clearInterval(codexWatcher); });
 app.on("window-all-closed", () => { if (process.platform !== "darwin" && !watchCodex) app.quit(); });
