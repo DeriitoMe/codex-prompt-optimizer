@@ -1,10 +1,94 @@
 <!doctype html>
 <html lang="zh-CN">
-<head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'none'; object-src 'none';" /><title>Context Prompt Assistant</title><link rel="stylesheet" href="./styles.css" /></head>
-<body><main class="shell">
-  <header><div><p class="eyebrow">CODEX COMPANION</p><h1>提示词优化助手</h1></div><button id="pin" class="icon" title="切换置顶状态">置顶</button></header>
-  <section class="card binding"><div class="section-title"><span>上下文目标</span><span id="context-badge" class="badge neutral">未绑定</span></div><div class="row"><input id="url" type="url" placeholder="粘贴 Codex 项目／任务链接" autocomplete="off" /><button id="bind">绑定</button></div><div id="target" class="meta">每次优化前会重新检查可访问范围。</div></section>
-  <section class="card"><div class="section-title"><span>待优化原话</span><span class="hint">Ctrl + Enter 优化</span></div><textarea id="draft" placeholder="例如：把刚才那个页面改紧凑点，之前说的功能别删"></textarea><div class="actions"><button id="cancel" disabled>取消</button><button id="optimize" class="primary">优化提示词</button><button id="clear">清空</button></div></section>
-  <section class="card result-card"><div class="section-title"><span>优化结果</span><button id="copy" class="small" disabled>复制</button></div><pre id="result" class="result">尚未生成结果。</pre><div id="status" class="status"></div></section>
-  <footer>只生成提示词，不修改项目、不续跑任务、不自动发送。ChatGPT 私有链接需以实际可读性为准。</footer>
-</main><script src="./renderer.js"></script></body></html>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'none'; object-src 'none';" />
+  <title>Context Prompt Assistant</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="主导航">
+      <div class="brand-mark" aria-label="Context Prompt Assistant">C</div>
+      <nav class="side-nav">
+        <button class="nav-item active" title="提示词优化" aria-label="提示词优化">
+          <span class="nav-icon">✦</span><span class="nav-label">优化</span>
+        </button>
+        <button class="nav-item" title="上下文目标" aria-label="上下文目标">
+          <span class="nav-icon">⌘</span><span class="nav-label">目标</span>
+        </button>
+      </nav>
+      <div class="sidebar-bottom">
+        <span class="connection-dot" aria-hidden="true"></span>
+        <span>Codex</span>
+      </div>
+    </aside>
+
+    <main class="workspace">
+      <header class="topbar">
+        <div class="title-stack">
+          <span class="eyebrow">CODEX COMPANION</span>
+          <h1>提示词优化助手</h1>
+        </div>
+        <div class="top-actions">
+          <span id="context-badge" class="badge neutral">未绑定</span>
+          <button id="pin" class="toolbar-button" title="切换置顶状态">置顶</button>
+        </div>
+      </header>
+
+      <section class="target-bar" aria-label="上下文目标">
+        <div class="target-heading">
+          <span class="target-icon">⌁</span>
+          <div>
+            <div class="target-title">上下文目标</div>
+            <div id="target" class="target-meta">每次优化前会重新检查可访问范围。</div>
+          </div>
+        </div>
+        <div class="target-controls">
+          <input id="url" type="url" placeholder="粘贴 Codex 任务链接" autocomplete="off" aria-label="Codex 任务链接" />
+          <button id="bind" class="secondary-button">绑定</button>
+        </div>
+      </section>
+
+      <section class="conversation" aria-label="提示词工作区">
+        <div class="section-heading">
+          <div>
+            <span class="section-kicker">PROMPT WORKSPACE</span>
+            <h2>把想法交给 Codex 之前，先把指令说清楚</h2>
+          </div>
+          <span class="shortcut">Ctrl + Enter</span>
+        </div>
+
+        <div class="prompt-card">
+          <div class="prompt-card-label"><span class="composer-dot"></span>待优化原话</div>
+          <textarea id="draft" placeholder="例如：把刚才那个页面改紧凑点，之前说的功能别删" aria-label="待优化原话"></textarea>
+          <div class="composer-footer">
+            <span class="composer-hint">只生成提示词，不会执行原话中的任务</span>
+            <div class="composer-actions">
+              <button id="clear" class="ghost-button">清空</button>
+              <button id="cancel" class="ghost-button" disabled>取消</button>
+              <button id="optimize" class="send-button"><span>优化提示词</span><span class="send-arrow">↗</span></button>
+            </div>
+          </div>
+        </div>
+
+        <div class="result-panel">
+          <div class="result-heading">
+            <div class="result-title"><span class="result-icon">✧</span><span>优化结果</span></div>
+            <button id="copy" class="copy-button" disabled>复制</button>
+          </div>
+          <pre id="result" class="result">尚未生成结果。</pre>
+          <div id="status" class="status"></div>
+        </div>
+      </section>
+
+      <footer class="safety-note">
+        <span class="shield">⌑</span>
+        <span>只读优化会话 · 不修改项目 · 不续跑任务 · 不自动发送</span>
+      </footer>
+    </main>
+  </div>
+  <script src="./renderer.js"></script>
+</body>
+</html>
