@@ -94,6 +94,12 @@ npm run package:win
 
 输出在 `release/`。当前个人版构建默认不做 Windows 代码签名，首次启动可能显示系统的未知发布者提示；正式公开分发前应配置自己的签名证书。构建机需要能下载 Electron 二进制；网络受限时可先运行不依赖 Electron 的三项检查。
 
+构建完成后可生成 SHA-256 校验值，确认安装包没有被传输或替换：
+
+```powershell
+npm.cmd run verify:release
+```
+
 ## 使用
 
 1. 启动应用，在“上下文目标”粘贴 Codex 任务或对话链接并绑定。

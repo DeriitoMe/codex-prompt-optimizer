@@ -9,6 +9,9 @@
 - 增加 Codex 插件清单、只读 MCP 工具、共用 Skill、40 条验收案例和 Windows 打包配置。
 - Windows 自动发现 Codex 桌面 CLI，并支持通过 `CODEX_CLI_PATH` 指定完整路径。
 - 增加可选的 Windows 启动监视器：检测到 `codex.exe` 时显示伴随窗口，支持注册和移除启动项。
+- Windows 启动默认关闭 Chromium 硬件加速，降低部分显卡驱动导致的原生崩溃风险。
+- 伴随窗口现在会记忆位置和尺寸，并在显示器变化后限制到可见区域。
+- 增加发行包 SHA-256 校验命令 `npm.cmd run verify:release`，并强化 40 条验收案例的结构校验。
 
 ### 已知边界
 
