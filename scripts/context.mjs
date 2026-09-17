@@ -26,7 +26,17 @@ function safeUrl(raw) {
   if (typeof raw !== "string" || !raw.trim()) {
     return { ok: false, reason: "empty_url" };
   }
-  const value = raw.trim();
+  let value = raw.trim();
+  // Clipboard content often includes Markdown link syntax or angle brackets.
+  // Extract only the URL token; the URL is still validated below and no other
+  // clipboard text is sent to a reader.
+  const markdownMatch = value.match(/\]\(\s*((?:https?|codex):\/\/[^\s)]+)\s*\)/i);
+  if (markdownMatch) value = markdownMatch[1];
+  else if (value.startsWith("<") && value.endsWith(">")) value = value.slice(1, -1).trim();
+  else {
+    const urlMatch = value.match(/((?:https?|codex):\/\/[^\s<>"']+)/i);
+    if (urlMatch) value = urlMatch[1].replace(/[.,!?;:]+$/, "");
+  }
   if (value.length > MAX_URL_LENGTH) {
     return { ok: false, reason: "url_too_long" };
   }

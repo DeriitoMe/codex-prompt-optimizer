@@ -37,6 +37,13 @@ test("parses the public ChatGPT share route for paste-and-status handling", () =
   assert.equal(target.access, "unverified");
 });
 
+test("extracts a URL copied from Markdown or angle-bracket formatting", () => {
+  const markdown = resolveContextTarget("[任务](https://chatgpt.com/s/cx_demo123)");
+  assert.equal(markdown.id, "cx_demo123");
+  const bracketed = resolveContextTarget("<https://chatgpt.com/share/demo123>");
+  assert.equal(bracketed.id, "demo123");
+});
+
 test("recognizes Codex routes hosted under ChatGPT", () => {
   const target = resolveContextTarget("https://chatgpt.com/codex/tasks/task_123");
   assert.equal(target.provider, "codex");
