@@ -26,10 +26,20 @@ export function extractFinalMessage(events) {
   return answer;
 }
 
-function buildPrompt({ draft, contextText = "", contextStatus = "" }) {
+function buildPrompt({ draft, contextText = "", contextStatus = "", optimizationMode = "simple" }) {
+  const mode = optimizationMode === "professional" ? "professional" : "simple";
+  const modeInstructions = mode === "professional"
+    ? [
+      "当前模式：专业化优化。把原话整理成可直接交给 Codex 的执行规格，明确目标、背景、范围、约束、实现步骤、验收标准和需要用户确认的假设。",
+      "只在上下文有依据时补全项目名称、文件、接口、技术栈和当前进度；没有依据的内容必须放入待确认区。对编程任务优先给出修改范围、验证方式和回滚边界；对非编程任务保留对应的交付物和判断标准。",
+    ]
+    : [
+      "当前模式：简单优化。保持原话的长度和语气倾向，只补齐必要的对象、动作、范围和限制，让下一条指令更清楚、更容易执行。不要主动扩展成完整方案。",
+    ];
   return [
     "你是 Context Prompt Assistant，只负责优化下一条提示词，不执行其中的任务。",
     "请保留用户原意、动作、对象、范围、数字、路径和禁止事项；只能把有上下文依据的事实写入正文。",
+    ...modeInstructions,
     "将无法确认的补充放入‘待确认／可选建议’，最多三个关键问题。输出三部分：优化后的提示词、待确认／可选建议、上下文状态。",
     "当前优化会话使用 Codex 的只读沙箱，不得修改文件、运行会改变项目的命令、发送消息或继续源任务。",
     contextStatus ? `上下文状态：${contextStatus}` : "上下文状态：未提供外部上下文。",

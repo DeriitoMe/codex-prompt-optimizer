@@ -24,6 +24,7 @@
         <div class="header-actions">
           <span id="context-badge" class="badge neutral">未绑定</span>
           <button id="layout" class="toolbar-button" title="切换竖向／横向布局">竖向</button>
+          <button id="theme-toggle" class="toolbar-button" title="切换浅色／深色主题">浅色</button>
           <button id="pin" class="toolbar-button" title="切换置顶状态">置顶</button>
           <button id="settings" class="icon-button" title="打开设置" aria-label="打开设置">⚙</button>
         </div>
@@ -56,7 +57,7 @@
               <span class="section-kicker">YOUR DRAFT</span>
               <h2>待优化原话</h2>
             </div>
-            <span class="shortcut">Ctrl + Enter</span>
+            <div class="prompt-tools"><div id="mode-switch" class="mode-switch" role="group" aria-label="提示词优化方式"><button type="button" class="mode-button active" data-mode="simple">简单优化</button><button type="button" class="mode-button" data-mode="professional">专业化</button></div><span class="shortcut">Ctrl + Enter</span></div>
           </div>
           <textarea id="draft" placeholder="例如：把刚才那个页面改紧凑点，之前说的功能别删" aria-label="待优化原话"></textarea>
           <div class="composer-footer">
@@ -95,6 +96,7 @@
       <div class="settings-heading"><div><span class="section-kicker">PREFERENCES</span><h2>设置</h2></div><button id="close-settings" class="icon-button" value="cancel" aria-label="关闭设置">×</button></div>
       <label class="setting-row"><span><strong>随 Codex 自动显示</strong><small>登录 Windows 后后台待命，检测到 Codex 才显示助手。</small></span><input id="auto-show" type="checkbox" /></label>
       <label class="setting-row"><span><strong>默认字体</strong><small>大字模式会增加正文阅读尺寸。</small></span><select id="font-scale"><option value="standard">标准</option><option value="large">大字</option></select></label>
+      <label class="setting-row"><span><strong>界面主题</strong><small>切换浅色和完整深色主题，设置会在重启后保留。</small></span><select id="theme"><option value="light">浅色</option><option value="dark">黑色</option></select></label>
       <div class="setting-row setting-stack"><span><strong>Codex 程序路径</strong><small id="codex-path">自动发现或使用 Codex 协议启动。</small></span><button id="choose-codex" class="secondary-button" type="button">选择程序</button></div>
       <div class="settings-actions"><button id="run-diagnostics" class="secondary-button" type="button">运行启动诊断</button><button id="launch-codex" class="primary-button" type="button">启动 Codex</button></div>
       <pre id="diagnostics-output" class="diagnostics-output" hidden></pre>

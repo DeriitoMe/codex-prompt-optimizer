@@ -6,7 +6,7 @@
 
 ## 当前版本
 
-0.3.0 已包含：
+0.4.0 已包含：
 
 - Electron 伴随窗口：链接绑定、刷新状态、提示词输入、复制、Ctrl+Enter、置顶。
 - Codex 只读优化调用：通过 `codex exec --json --sandbox read-only --ephemeral` 生成结果。
@@ -14,6 +14,7 @@
 - Codex 插件：`resolve_context_target`、`read_context`、`refresh_context` 三个只读 MCP 工具及共用 Skill。
 - Windows NSIS／便携包构建配置、GitHub Actions 校验、MIT 许可证和人工验收清单。
 - `test/cases.json` 中的 40 条固定验收案例，覆盖保真、指代、刷新、隔离和异常。
+- 简单优化／专业化优化模式，以及可持久化的浅色／黑色完整主题。
 
 这是可审查的首个桌面版本；真实 App Server 历史读取和客户端安装仍需在用户的 Codex 环境中人工验收。
 
@@ -50,7 +51,7 @@ npm.cmd run dev
 
 插件被调用时不会自动弹出 Electron 窗口：Skill/MCP 运行在 Codex 对话内，伴随窗口是独立客户端。日常使用请从开始菜单启动已安装的 `Context Prompt Assistant`，或在项目目录运行上面的命令；安装包位于 `release/`。
 
-如果 `npm run dev` 后没有看到窗口，可直接运行 `node_modules\\electron\\dist\\electron.exe .` 检查开发环境，或启动 `release\\Context Prompt Assistant-0.3.0-x64-portable.exe`。窗口创建后会在 Codex 旁边独立显示，不会嵌入 Codex 主窗口。
+如果 `npm run dev` 后没有看到窗口，可直接运行 `node_modules\\electron\\dist\\electron.exe .` 检查开发环境，或启动 `release\\Context Prompt Assistant-0.4.0-x64-portable.exe`。窗口创建后会在 Codex 旁边独立显示，不会嵌入 Codex 主窗口。
 
 如果 PowerShell 报“禁止运行 npm.ps1”，这是执行策略拦截了 PowerShell shim，项目本身还没有启动。可以使用上面的 `npm.cmd run dev`，或者只对当前窗口临时放行：
 
@@ -69,7 +70,7 @@ npm run dev
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\\scripts\\register-codex-autostart.ps1 `
-  -ExecutablePath (Resolve-Path '.\\release\\Context Prompt Assistant-0.3.0-x64-portable.exe').Path
+  -ExecutablePath (Resolve-Path '.\\release\\Context Prompt Assistant-0.4.0-x64-portable.exe').Path
 ```
 
 移除自动启动项：
@@ -83,7 +84,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\\scripts\\register-cod
 如果从其他目录执行 PowerShell，必须使用绝对路径；例如：
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "D:\CodexProjects\context-prompt-assistant\scripts\register-codex-autostart.ps1" -ExecutablePath "D:\CodexProjects\context-prompt-assistant\release\Context Prompt Assistant-0.3.0-x64-portable.exe"
+  powershell.exe -NoProfile -ExecutionPolicy Bypass -File "D:\CodexProjects\context-prompt-assistant\scripts\register-codex-autostart.ps1" -ExecutablePath "D:\CodexProjects\context-prompt-assistant\release\Context Prompt Assistant-0.4.0-x64-portable.exe"
 ```
 
 这是可选的 Windows 启动项，不会在你未执行注册命令时改变系统设置。

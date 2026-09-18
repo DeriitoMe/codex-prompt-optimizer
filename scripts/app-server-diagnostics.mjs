@@ -54,4 +54,4 @@ rl.on("line", (line) => {
   }
 });
 
-send({ jsonrpc: "2.0", id: 1, method: "initialize", params: { clientInfo: { name: "context-prompt-assistant-diagnostics", title: "Context Prompt Assistant diagnostics", version: "0.3.0" }, capabilities: {} } });
+  send({ jsonrpc: "2.0", id: 1, method: "initialize", params: { clientInfo: { name: "context-prompt-assistant-diagnostics", title: "Context Prompt Assistant diagnostics", version: "0.4.0" }, capabilities: {} } });

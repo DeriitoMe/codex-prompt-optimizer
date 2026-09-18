@@ -86,7 +86,7 @@ export async function readCodexThread(threadId, options = {}) {
       }
     });
     rpcRequest(proc, 1, "initialize", {
-      clientInfo: { name: "context_prompt_assistant", title: "Context Prompt Assistant", version: "0.3.0" },
+      clientInfo: { name: "context_prompt_assistant", title: "Context Prompt Assistant", version: "0.4.0" },
       capabilities: {},
     });
     // Keep a reference in the closure for diagnostics and future protocol checks.

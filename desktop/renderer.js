@@ -16,6 +16,8 @@ const optimizeButton = $("optimize");
 const optimizePlain = $("optimize-plain");
 const pasteTarget = $("paste-target");
 const layoutButton = $("layout");
+const themeToggle = $("theme-toggle");
+const modeButtons = [...document.querySelectorAll(".mode-button")];
 const settingsDialog = $("settings-dialog");
 const settingsStatus = $("settings-status");
 const diagnosticsOutput = $("diagnostics-output");
@@ -23,7 +25,7 @@ let context = null;
 let pinned = false;
 let requestId = null;
 let operationToken = 0;
-let preferences = { layout: "vertical", fontScale: "standard", autoShowWithCodex: false };
+let preferences = { layout: "vertical", fontScale: "standard", theme: "light", optimizationMode: "simple", autoShowWithCodex: false };
 
 function setBadge(text, kind = "neutral") {
   badge.textContent = text;
@@ -92,11 +94,20 @@ function applyPreferences(next = {}) {
   preferences = { ...preferences, ...next };
   app.dataset.layout = preferences.layout === "horizontal" ? "horizontal" : "vertical";
   app.dataset.fontScale = preferences.fontScale === "large" ? "large" : "standard";
+  app.dataset.theme = preferences.theme === "dark" ? "dark" : "light";
   layoutButton.textContent = app.dataset.layout === "horizontal" ? "横向" : "竖向";
   layoutButton.title = app.dataset.layout === "horizontal" ? "切换为竖向布局" : "切换为横向布局";
+  themeToggle.textContent = app.dataset.theme === "dark" ? "黑色" : "浅色";
+  themeToggle.title = app.dataset.theme === "dark" ? "切换为浅色主题" : "切换为黑色主题";
   $("auto-show").checked = Boolean(preferences.autoShowWithCodex);
   $("font-scale").value = preferences.fontScale;
+  $("theme").value = preferences.theme;
   $("codex-path").textContent = preferences.codexExecutablePath || "自动发现或使用 Codex 协议启动。";
+  modeButtons.forEach((button) => {
+    const active = button.dataset.mode === preferences.optimizationMode;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-pressed", String(active));
+  });
 }
 
 async function bind() {
@@ -143,7 +154,7 @@ async function runOptimize({ useContext = true } = {}) {
         return;
       }
     }
-    const output = await api.optimize({ draft: text, context: useContext ? context : null, requestId });
+    const output = await api.optimize({ draft: text, context: useContext ? context : null, optimizationMode: preferences.optimizationMode, requestId });
     if (token !== operationToken) return;
     result.textContent = output.text;
     status.textContent = `已生成 · ${output.mode || "Codex"} · 优化会话只读`;
@@ -177,10 +188,13 @@ $("clear").addEventListener("click", () => { draft.value = ""; result.textConten
 copy.addEventListener("click", async () => { await api.copy(result.textContent); status.textContent = "已复制优化结果。"; });
 $("pin").addEventListener("click", async (event) => { pinned = !pinned; event.currentTarget.classList.toggle("active", pinned); await api.setAlwaysOnTop(pinned); status.textContent = pinned ? "窗口已置顶。" : "已取消置顶。"; });
 layoutButton.addEventListener("click", async () => { const next = preferences.layout === "horizontal" ? "vertical" : "horizontal"; applyPreferences(await api.setLayout(next)); });
+themeToggle.addEventListener("click", async () => { applyPreferences(await api.setTheme(preferences.theme === "dark" ? "light" : "dark")); });
 $("settings").addEventListener("click", openSettings);
 $("details-toggle").addEventListener("click", () => { targetDetails.hidden = !targetDetails.hidden; $("details-toggle").textContent = targetDetails.hidden ? "查看状态" : "收起状态"; });
 $("auto-show").addEventListener("change", async (event) => { const response = await api.setAutoShow(event.target.checked); if (!response.ok) { event.target.checked = !event.target.checked; settingsStatus.textContent = `自动启动设置失败：${response.details || response.reason}`; return; } applyPreferences(response.preferences); settingsStatus.textContent = response.registered ? "已启用：下次登录后会后台监听 Codex。" : "已关闭自动显示。"; });
 $("font-scale").addEventListener("change", async (event) => { applyPreferences(await api.setFontScale(event.target.value)); });
+$("theme").addEventListener("change", async (event) => { applyPreferences(await api.setTheme(event.target.value)); settingsStatus.textContent = preferences.theme === "dark" ? "已切换为黑色主题。" : "已切换为浅色主题。"; });
+modeButtons.forEach((button) => button.addEventListener("click", async () => { applyPreferences(await api.setOptimizationMode(button.dataset.mode)); status.textContent = button.dataset.mode === "professional" ? "已选择专业化优化：将补充执行范围、验收标准和待确认假设。" : "已选择简单优化：只补齐必要信息，保持原话简洁。"; }));
 $("choose-codex").addEventListener("click", async () => { const response = await api.chooseCodexExecutable(); if (response.ok) { settingsStatus.textContent = "Codex 路径已保存。"; applyPreferences(await api.getPreferences()); } });
 $("run-diagnostics").addEventListener("click", async () => { diagnosticsOutput.hidden = false; diagnosticsOutput.textContent = "正在检查…"; diagnosticsOutput.textContent = JSON.stringify(await api.getDiagnostics(), null, 2); });
 $("launch-codex").addEventListener("click", async () => { const response = await api.launchCodex(); settingsStatus.textContent = response.ok ? "已请求启动 Codex。" : response.message || "无法启动 Codex，请选择程序路径。"; });

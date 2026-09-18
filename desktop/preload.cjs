@@ -10,6 +10,8 @@ contextBridge.exposeInMainWorld("contextPromptAssistant", {
   getPreferences: () => ipcRenderer.invoke("get-preferences"),
   setLayout: (layout) => ipcRenderer.invoke("set-layout", layout),
   setFontScale: (fontScale) => ipcRenderer.invoke("set-font-scale", fontScale),
+  setTheme: (theme) => ipcRenderer.invoke("set-theme", theme),
+  setOptimizationMode: (mode) => ipcRenderer.invoke("set-optimization-mode", mode),
   setAutoShow: (enabled) => ipcRenderer.invoke("set-auto-show", enabled),
   getDiagnostics: () => ipcRenderer.invoke("get-diagnostics"),
   chooseCodexExecutable: () => ipcRenderer.invoke("choose-codex-executable"),

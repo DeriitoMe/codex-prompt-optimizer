@@ -26,10 +26,12 @@ const appUserData = path.join(app.getPath("appData"), app.isPackaged ? "Context 
 fs.mkdirSync(appUserData, { recursive: true });
 app.setPath("userData", appUserData);
 
-const APP_VERSION = "0.3.0";
+const APP_VERSION = "0.4.0";
 const DEFAULTS = {
   layout: "vertical",
   fontScale: "standard",
+  theme: "light",
+  optimizationMode: "simple",
   autoShowWithCodex: false,
   codexExecutablePath: "",
   globalShortcut: "Control+Alt+P",
@@ -99,6 +101,8 @@ function loadPreferences() {
     ...stored,
     layout: stored.layout === "horizontal" ? "horizontal" : DEFAULTS.layout,
     fontScale: stored.fontScale === "large" ? "large" : DEFAULTS.fontScale,
+    theme: stored.theme === "dark" ? "dark" : DEFAULTS.theme,
+    optimizationMode: stored.optimizationMode === "professional" ? "professional" : DEFAULTS.optimizationMode,
     autoShowWithCodex: Boolean(stored.autoShowWithCodex),
     codexExecutablePath: typeof stored.codexExecutablePath === "string" ? stored.codexExecutablePath : "",
   };
@@ -218,10 +222,10 @@ function createWindow() {
     minWidth: horizontal ? 720 : 420,
     minHeight: 600,
     title: "Context Prompt Assistant",
-    backgroundColor: "#f7f9fc",
+    backgroundColor: prefs.theme === "dark" ? "#17191f" : "#f7f9fc",
     autoHideMenuBar: true,
     titleBarStyle: "hidden",
-    ...(process.platform !== "darwin" ? { titleBarOverlay: { color: "#f7f9fc", symbolColor: "#5c6678", height: 36 } } : {}),
+    ...(process.platform !== "darwin" ? { titleBarOverlay: { color: prefs.theme === "dark" ? "#1b1e25" : "#f7f9fc", symbolColor: prefs.theme === "dark" ? "#c8cedb" : "#5c6678", height: 36 } } : {}),
     webPreferences: { preload: path.join(__dirname, "preload.cjs"), contextIsolation: true, nodeIntegration: false, sandbox: true },
   });
   mainWindow.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
@@ -280,6 +284,30 @@ async function setAutoShowWithCodex(enabled) {
   updateTrayMenu();
   sendToWindow("preferences", getPublicPreferences(result.registered));
   return { ...result, preferences: getPublicPreferences(result.registered) };
+}
+
+function applyThemeToWindow() {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  const dark = prefs.theme === "dark";
+  mainWindow.setBackgroundColor(dark ? "#17191f" : "#f7f9fc");
+  if (process.platform !== "darwin" && typeof mainWindow.setTitleBarOverlay === "function") {
+    mainWindow.setTitleBarOverlay({ color: dark ? "#1b1e25" : "#f7f9fc", symbolColor: dark ? "#c8cedb" : "#5c6678", height: 36 });
+  }
+}
+
+function setTheme(theme) {
+  prefs.theme = theme === "dark" ? "dark" : "light";
+  savePreferences();
+  applyThemeToWindow();
+  sendToWindow("preferences", getPublicPreferences());
+  return getPublicPreferences();
+}
+
+function setOptimizationMode(mode) {
+  prefs.optimizationMode = mode === "professional" ? "professional" : "simple";
+  savePreferences();
+  sendToWindow("preferences", getPublicPreferences());
+  return getPublicPreferences();
 }
 
 function getPublicPreferences(autostartRegistered = null) {
@@ -456,7 +484,7 @@ ipcMain.handle("optimize", async (_event, payload) => {
   const requestId = String(payload?.requestId || Date.now());
   const controller = new AbortController();
   activeOptimizations.set(requestId, controller);
-  try { return await optimizerModule.optimizePrompt({ draft: payload?.draft, contextText: context?.access === "stale" ? "" : context?.text || "", contextStatus: context?.access || "none", cwd: payload?.cwd || process.cwd(), timeoutMs: 120000, signal: controller.signal }); }
+  try { return await optimizerModule.optimizePrompt({ draft: payload?.draft, contextText: context?.access === "stale" ? "" : context?.text || "", contextStatus: context?.access || "none", optimizationMode: payload?.optimizationMode || prefs.optimizationMode, cwd: payload?.cwd || process.cwd(), timeoutMs: 120000, signal: controller.signal }); }
   finally { activeOptimizations.delete(requestId); }
 });
 ipcMain.handle("cancel-optimize", (_event, requestId) => { const controller = activeOptimizations.get(String(requestId)); controller?.abort(); return Boolean(controller); });
@@ -466,6 +494,8 @@ ipcMain.handle("set-always-on-top", (_event, enabled) => { mainWindow?.setAlways
 ipcMain.handle("get-preferences", async () => getPublicPreferences(await queryRegistryAutostart()));
 ipcMain.handle("set-layout", (_event, layout) => setLayout(layout));
 ipcMain.handle("set-font-scale", (_event, fontScale) => { prefs.fontScale = fontScale === "large" ? "large" : "standard"; savePreferences(); sendToWindow("preferences", getPublicPreferences()); return getPublicPreferences(); });
+ipcMain.handle("set-theme", (_event, theme) => setTheme(theme));
+ipcMain.handle("set-optimization-mode", (_event, mode) => setOptimizationMode(mode));
 ipcMain.handle("set-auto-show", (_event, enabled) => setAutoShowWithCodex(enabled));
 ipcMain.handle("get-diagnostics", () => sendDiagnostics());
 ipcMain.handle("choose-codex-executable", () => chooseCodexExecutable());

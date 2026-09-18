@@ -1,6 +1,6 @@
 @echo off
 setlocal
-set "APP=%~dp0release\Context Prompt Assistant-0.3.0-x64-portable.exe"
+set "APP=%~dp0release\Context Prompt Assistant-0.4.0-x64-portable.exe"
 if not exist "%APP%" set "APP=%LOCALAPPDATA%\Programs\Context Prompt Assistant\Context Prompt Assistant.exe"
 if not exist "%APP%" set "APP=%LOCALAPPDATA%\Programs\context-prompt-assistant\Context Prompt Assistant.exe"
 if not exist "%APP%" (

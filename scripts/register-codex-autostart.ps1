@@ -24,7 +24,7 @@ if (-not $ExecutablePath) {
   $repoRoot = Split-Path -Parent $PSScriptRoot
   $localAppData = [Environment]::GetFolderPath('LocalApplicationData')
   $candidates = @(
-    (Join-Path $repoRoot 'release\Context Prompt Assistant-0.3.0-x64-portable.exe'),
+    (Join-Path $repoRoot 'release\Context Prompt Assistant-0.4.0-x64-portable.exe'),
     (Join-Path $localAppData 'Programs\Context Prompt Assistant\Context Prompt Assistant.exe'),
     (Join-Path $localAppData 'Programs\context-prompt-assistant\Context Prompt Assistant.exe')
   )
