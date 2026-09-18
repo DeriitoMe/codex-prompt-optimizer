@@ -207,8 +207,10 @@ function sendToWindow(channel, payload) {
 }
 
 function makeTrayIcon() {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><rect x="1" y="1" width="14" height="14" rx="4" fill="#6557d9"/><path d="M5 4h6v1.4H8.7V12H7.2V5.4H5z" fill="white"/></svg>`;
-  try { return nativeImage.createFromDataURL(`data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`); } catch { return nativeImage.createEmpty(); }
+  try {
+    const icon = nativeImage.createFromPath(path.join(__dirname, "assets", "context-prompt-assistant-tray.png"));
+    return icon.resize({ width: 16, height: 16 });
+  } catch { return nativeImage.createEmpty(); }
 }
 
 function updateTrayMenu() {
@@ -242,6 +244,7 @@ function createWindow() {
     minWidth: horizontal ? 720 : 420,
     minHeight: 600,
     title: "Context Prompt Assistant",
+    icon: path.join(__dirname, "assets", "context-prompt-assistant.png"),
     backgroundColor: prefs.theme === "dark" ? "#17191f" : "#f7f9fc",
     autoHideMenuBar: true,
     titleBarStyle: "hidden",
