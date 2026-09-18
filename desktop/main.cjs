@@ -19,12 +19,32 @@ const { pathToFileURL } = require("node:url");
 
 // The UI is light and CSS-driven. Disabling Chromium GPU startup avoids a
 // native graphics-driver crash seen on some Windows machines (0x80000003).
-if (process.platform === "win32") app.disableHardwareAcceleration();
+if (process.platform === "win32") {
+  app.disableHardwareAcceleration();
+  app.commandLine.appendSwitch("disable-gpu");
+  app.commandLine.appendSwitch("disable-gpu-compositing");
+  app.commandLine.appendSwitch("in-process-gpu");
+}
 
 app.setName("Context Prompt Assistant");
-const appUserData = path.join(app.getPath("appData"), app.isPackaged ? "Context Prompt Assistant" : "Context Prompt Assistant-dev");
-fs.mkdirSync(appUserData, { recursive: true });
-app.setPath("userData", appUserData);
+const userDataArgIndex = process.argv.indexOf("--user-data-dir");
+const requestedUserData = userDataArgIndex >= 0 ? process.argv[userDataArgIndex + 1] : "";
+const preferredUserData = requestedUserData || path.join(app.getPath("appData"), app.isPackaged ? "Context Prompt Assistant" : "Context Prompt Assistant-dev");
+try {
+  fs.mkdirSync(preferredUserData, { recursive: true });
+  app.setPath("userData", preferredUserData);
+} catch (error) {
+  // Some managed Windows profiles deny creating a new AppData child. Keep
+  // a writable temporary profile as a last resort so the app can still open
+  // instead of failing before Electron creates a window.
+  const fallbackUserData = path.join(os.tmpdir(), `Context Prompt Assistant${app.isPackaged ? "" : "-dev"}`);
+  try {
+    fs.mkdirSync(fallbackUserData, { recursive: true });
+    app.setPath("userData", fallbackUserData);
+  } catch (fallbackError) {
+    try { process.stderr.write(`Context Prompt Assistant userData fallback failed: ${fallbackError?.message || error}\n`); } catch { /* best effort */ }
+  }
+}
 
 const APP_VERSION = "0.4.0";
 const DEFAULTS = {
