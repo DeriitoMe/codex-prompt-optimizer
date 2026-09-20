@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { buildPrompt, extractFinalMessage } from "../scripts/optimizer.mjs";
+import { buildCodexArgs, buildPrompt, extractFinalMessage } from "../scripts/optimizer.mjs";
 
 test("extracts only the final assistant message from Codex events", () => {
   const text = extractFinalMessage([
@@ -25,4 +25,13 @@ test("optimization modes have distinct scopes", () => {
   assert.doesNotMatch(simple, /执行规格/);
   assert.match(professional, /专业化优化/);
   assert.match(professional, /验收标准/);
+});
+
+test("optimizer pins the low-cost Luna model and high reasoning effort", () => {
+  const args = buildCodexArgs({ cwd: "D:/CodexProjects/example" });
+  assert.deepEqual(args.slice(-6), [
+    "--model", "gpt-5.6-luna",
+    "--config", 'model_reasoning_effort="high"',
+    "--cd", "D:/CodexProjects/example",
+  ]);
 });

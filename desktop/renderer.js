@@ -157,7 +157,8 @@ async function runOptimize({ useContext = true } = {}) {
     const output = await api.optimize({ draft: text, context: useContext ? context : null, optimizationMode: preferences.optimizationMode, requestId });
     if (token !== operationToken) return;
     result.textContent = output.text;
-    status.textContent = `已生成 · ${output.mode || "Codex"} · 优化会话只读`;
+    const modelLabel = output.model ? `${output.model}（${output.reasoningEffort || "默认"}）` : (output.mode || "Codex");
+    status.textContent = `已生成 · ${modelLabel} · 优化会话只读`;
   } catch (error) {
     if (token !== operationToken) return;
     result.textContent = error?.message === "optimizer_cancelled" ? "已取消本次优化。" : "暂时无法生成优化结果。";

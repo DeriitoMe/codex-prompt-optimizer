@@ -4,6 +4,19 @@ import { extractText } from "./context.mjs";
 import { describeCodexCliError, resolveCodexCli } from "./codex-cli.mjs";
 
 const DEFAULT_TIMEOUT_MS = 120000;
+export const DEFAULT_MODEL = "gpt-5.6-luna";
+export const DEFAULT_REASONING_EFFORT = "high";
+
+export function buildCodexArgs({ cwd, model = DEFAULT_MODEL, reasoningEffort = DEFAULT_REASONING_EFFORT } = {}) {
+  const args = [
+    "exec", "--json", "--color", "never", "--sandbox", "read-only",
+    "--ephemeral", "--skip-git-repo-check",
+    "--model", model,
+    "--config", `model_reasoning_effort="${reasoningEffort}"`,
+  ];
+  if (cwd) args.push("--cd", cwd);
+  return args;
+}
 
 /**
  * Extract the final assistant text from Codex's JSONL event stream. The
@@ -52,11 +65,7 @@ export function optimizePrompt(options = {}) {
   const draft = typeof options.draft === "string" ? options.draft.trim() : "";
   if (!draft) return Promise.reject(new Error("draft_required"));
   const cli = resolveCodexCli({ cliPath: options.cliPath });
-  const args = [
-    "exec", "--json", "--color", "never", "--sandbox", "read-only",
-    "--ephemeral", "--skip-git-repo-check",
-  ];
-  if (options.cwd) args.push("--cd", options.cwd);
+  const args = buildCodexArgs({ cwd: options.cwd });
   const prompt = buildPrompt(options);
   const timeoutMs = Number.isFinite(options.timeoutMs) ? options.timeoutMs : DEFAULT_TIMEOUT_MS;
   if (options.signal?.aborted) return Promise.reject(new Error("optimizer_cancelled"));
@@ -98,7 +107,13 @@ export function optimizePrompt(options = {}) {
     child.on("exit", (code) => {
       if (settled) return;
       const answer = extractFinalMessage(events);
-      if (code === 0 && answer) finish(null, { text: answer, events: events.length, mode: "codex-cli-read-only" });
+      if (code === 0 && answer) finish(null, {
+        text: answer,
+        events: events.length,
+        mode: "codex-cli-read-only",
+        model: DEFAULT_MODEL,
+        reasoningEffort: DEFAULT_REASONING_EFFORT,
+      });
       else finish(new Error(`optimizer_exit_${code ?? "unknown"}`));
     });
     const rl = readline.createInterface({ input: child.stdout });
