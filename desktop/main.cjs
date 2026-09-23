@@ -184,8 +184,23 @@ function scheduleWindowStateSave() {
   stateSaveTimer = setTimeout(saveWindowState, 250);
 }
 
-function showWindow({ focus = false } = {}) {
+function positionWindowOnRightSide() {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  const cursor = screen.getCursorScreenPoint();
+  const display = screen.getDisplayNearestPoint(cursor);
+  const area = display.workArea;
+  const bounds = mainWindow.getBounds();
+  const margin = 14;
+  const width = Math.min(bounds.width, area.width);
+  const height = Math.min(bounds.height, area.height);
+  const x = area.x + area.width - width - margin;
+  const y = area.y + Math.max(0, Math.round((area.height - height) / 2));
+  mainWindow.setBounds({ x: Math.max(area.x, x), y: Math.max(area.y, y), width: bounds.width, height: bounds.height }, false);
+}
+
+function showWindow({ focus = false, position = "saved" } = {}) {
   if (!mainWindow || mainWindow.isDestroyed()) createWindow();
+  if (position === "right") positionWindowOnRightSide();
   if (focus) mainWindow.focus();
   else mainWindow.showInactive();
   sendToWindow("window-visibility", { visible: true });
@@ -360,7 +375,7 @@ async function watchCodexProcess() {
     sendToWindow("codex-status", lastCodexStatus);
     if (lastCodexStatus.state === "running") {
       codexMisses = 0;
-      if (!codexWasRunning) showWindow({ focus: false });
+      if (!codexWasRunning) showWindow({ focus: false, position: "right" });
       codexWasRunning = true;
     } else if (lastCodexStatus.state === "not_running") {
       codexMisses += 1;
@@ -405,14 +420,14 @@ async function launchCodex() {
       const child = spawn(candidate, [], { detached: true, stdio: "ignore", windowsHide: false });
       child.unref();
       startCodexWatcher();
-      showWindow({ focus: false });
+      showWindow({ focus: false, position: "right" });
       return { ok: true, method: "executable", path: candidate };
     } catch (error) { return { ok: false, reason: "codex_launch_failed", details: String(error.message || error) }; }
   }
   try {
     await shell.openExternal("codex://");
     startCodexWatcher();
-    showWindow({ focus: false });
+    showWindow({ focus: false, position: "right" });
     return { ok: true, method: "codex_protocol" };
   } catch (error) {
     const message = "找不到 Codex 桌面程序。请在设置中选择 Codex.exe，或直接从 Codex 启动后使用助手。";

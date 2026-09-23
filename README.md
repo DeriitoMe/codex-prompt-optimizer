@@ -9,6 +9,7 @@
 0.4.0 已包含：
 
 - Electron 伴随窗口：链接绑定、刷新状态、提示词输入、复制、Ctrl+Enter、置顶。
+- 随 Codex 自动显示时，助手会在鼠标所在显示器的右侧工作区弹出并垂直居中；手动打开仍沿用上次窗口位置。
 - Codex 只读优化调用：通过 `codex exec --model gpt-5.6-luna --config model_reasoning_effort="high" --json --sandbox read-only --ephemeral` 生成结果。
 - 共用上下文核心：Codex 目标解析、数组消息提取、稳定目标标识、截断和失败状态。
 - Codex 插件：`resolve_context_target`、`read_context`、`refresh_context` 三个只读 MCP 工具及共用 Skill。
