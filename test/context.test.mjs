@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
-import { contextFingerprint, fallbackInstruction, normalizeCodexThread, normalizeSharedSnapshot, resolveContextTarget } from "../scripts/context.mjs";
+import { contextFingerprint, fallbackInstruction, isRetryableSharedSnapshotFailure, normalizeCodexThread, normalizeSharedSnapshot, resolveContextTarget, retrySharedSnapshotRead, waitForSharedSnapshotPage } from "../scripts/context.mjs";
 
 test("parses Codex thread and strips query values from normalized URL", () => {
   const target = resolveContextTarget("codex://thread/thr_123?token=secret&title=Build");
@@ -43,6 +43,38 @@ test("normalizes shared snapshot text without claiming turn completeness", () =>
   assert.equal(normalized.coverage.kind, "partial");
   assert.equal(normalized.coverage.turns, null);
   assert.match(normalized.text, /keep the prompt read-only/);
+});
+
+test("waits for a cold shared page to replace its initial shell before reading", async () => {
+  let now = 0;
+  const initialShell = `Shared conversation\n${"Navigation and controls ".repeat(12)}`;
+  const conversation = `Shared conversation\n${"Actual conversation content. ".repeat(12)}`;
+  const page = await waitForSharedSnapshotPage(
+    async () => ({ text: now < 1200 ? initialShell : conversation }),
+    {
+      timeoutMs: 5000,
+      intervalMs: 100,
+      minimumInitialWaitMs: 1500,
+      stableMs: 400,
+      shortContentWaitMs: 2200,
+      now: () => now,
+      sleep: async (ms) => { now += ms; },
+    },
+  );
+  assert.match(page.text, /Actual conversation content/);
+});
+
+test("retries one transient shared snapshot read failure automatically", async () => {
+  let attempts = 0;
+  const result = await retrySharedSnapshotRead(async () => {
+    attempts += 1;
+    if (attempts === 1) throw new Error("codex_shared_snapshot_empty");
+    return { text: "snapshot content" };
+  }, { retryDelayMs: 0, sleep: async () => {} });
+  assert.equal(attempts, 2);
+  assert.equal(result.text, "snapshot content");
+  assert.equal(isRetryableSharedSnapshotFailure("net::ERR_TIMED_OUT"), true);
+  assert.equal(isRetryableSharedSnapshotFailure("unsupported_link"), false);
 });
 
 test("parses the public ChatGPT share route for paste-and-status handling", () => {

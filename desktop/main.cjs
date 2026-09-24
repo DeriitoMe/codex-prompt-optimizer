@@ -451,28 +451,41 @@ async function sendDiagnostics() {
   return diagnostics;
 }
 
-async function readSharedCodexSnapshot(url, maxChars = 24000) {
-  const { contextModule } = await modules();
+async function readSharedCodexSnapshotAttempt(url, maxChars, contextModule) {
   let snapshotWindow;
   try {
     snapshotWindow = new BrowserWindow({ show: false, title: "Codex shared snapshot reader", webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true } });
     snapshotWindow.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
     snapshotWindow.webContents.on("will-navigate", (event, nextUrl) => { try { const next = new URL(nextUrl); if (!next.hostname.endsWith("chatgpt.com") && next.hostname !== "chat.openai.com") event.preventDefault(); } catch { event.preventDefault(); } });
-    await Promise.race([snapshotWindow.loadURL(url, { userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131 Safari/537.36" }), delay(15000).then(() => { throw new Error("codex_shared_snapshot_load_timeout"); })]);
-    const deadline = Date.now() + 10000;
-    let page = null;
-    while (Date.now() < deadline) {
-      page = await snapshotWindow.webContents.executeJavaScript(`(() => ({ title: document.title || "", text: document.body?.innerText || "", url: location.href }))()`, true);
-      if (page?.text?.trim().length >= 160) break;
-      await delay(300);
-    }
+    let loadTimer;
+    try {
+      await Promise.race([
+        snapshotWindow.loadURL(url, { userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131 Safari/537.36" }),
+        new Promise((_, reject) => { loadTimer = setTimeout(() => reject(new Error("codex_shared_snapshot_load_timeout")), 15000); }),
+      ]);
+    } finally { clearTimeout(loadTimer); }
+    const page = await contextModule.waitForSharedSnapshotPage(
+      () => snapshotWindow.webContents.executeJavaScript(`(() => ({ title: document.title || "", text: document.body?.innerText || "", url: location.href }))()`, true),
+      { timeoutMs: 12000, intervalMs: 300, minimumInitialWaitMs: 1600, stableMs: 900 },
+    );
     const text = String(page?.text || "").trim();
     if (!text) throw new Error("codex_shared_snapshot_empty");
     if (/access denied|page not found|something went wrong/i.test(text) && text.length < 1200) throw new Error("codex_shared_snapshot_unavailable");
     const normalized = contextModule.normalizeSharedSnapshot(text, maxChars);
     return { ok: true, target: contextModule.resolveContextTarget(url), access: "read", checkedAt: new Date().toISOString(), ...normalized };
-  } catch (error) { return contextModule.classifyReadFailure(contextModule.resolveContextTarget(url), error?.message || "codex_shared_snapshot_read_failed"); }
-  finally { if (snapshotWindow && !snapshotWindow.isDestroyed()) snapshotWindow.destroy(); }
+  } finally { if (snapshotWindow && !snapshotWindow.isDestroyed()) snapshotWindow.destroy(); }
+}
+
+async function readSharedCodexSnapshot(url, maxChars = 24000) {
+  const { contextModule } = await modules();
+  try {
+    return await contextModule.retrySharedSnapshotRead(
+      () => readSharedCodexSnapshotAttempt(url, maxChars, contextModule),
+      { attempts: 2, retryDelayMs: 650 },
+    );
+  } catch (error) {
+    return contextModule.classifyReadFailure(contextModule.resolveContextTarget(url), error?.message || "codex_shared_snapshot_read_failed");
+  }
 }
 
 async function readContext(url, maxChars = 24000) {

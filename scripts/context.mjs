@@ -291,3 +291,69 @@ export function normalizeSharedSnapshot(text, maxChars = DEFAULT_MAX_CHARS) {
     text: clipped.text,
   };
 }
+
+export async function waitForSharedSnapshotPage(readPage, options = {}) {
+  if (typeof readPage !== "function") throw new TypeError("read_shared_snapshot_page_required");
+  const {
+    timeoutMs = 12000,
+    intervalMs = 300,
+    minimumInitialWaitMs = 1600,
+    stableMs = 900,
+    shortContentWaitMs = 4500,
+    minReadyChars = 160,
+    now = Date.now,
+    sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+  } = options;
+  const startedAt = now();
+  let lastText = null;
+  let stableSince = startedAt;
+  let lastPage = null;
+
+  while (now() - startedAt < timeoutMs) {
+    lastPage = await readPage();
+    const text = String(lastPage?.text || "").trim();
+    const currentTime = now();
+    if (text !== lastText) {
+      lastText = text;
+      stableSince = currentTime;
+    }
+
+    const isShortErrorPage = text.length < 1200 && /access denied|page not found|something went wrong/i.test(text);
+    if (isShortErrorPage) return lastPage;
+
+    const isLoadingPage = text.length < 800 && /just a moment|checking your browser|verifying your browser|loading (?:conversation|shared conversation)/i.test(text);
+    const elapsed = currentTime - startedAt;
+    const stableDuration = currentTime - stableSince;
+    const enoughContent = text.length >= minReadyChars || elapsed >= shortContentWaitMs;
+    if (text && !isLoadingPage && enoughContent && elapsed >= minimumInitialWaitMs && stableDuration >= stableMs) {
+      return lastPage;
+    }
+    await sleep(intervalMs);
+  }
+
+  const finalText = String(lastPage?.text || "").trim();
+  const finalStableDuration = now() - stableSince;
+  if (finalText && finalStableDuration >= stableMs && !/just a moment|checking your browser|verifying your browser|loading (?:conversation|shared conversation)/i.test(finalText)) {
+    return lastPage;
+  }
+  throw new Error(finalText ? "codex_shared_snapshot_not_ready" : "codex_shared_snapshot_empty");
+}
+
+export function isRetryableSharedSnapshotFailure(error) {
+  const reason = typeof error === "string" ? error : error?.message || "";
+  return /codex_shared_snapshot_(?:load_timeout|empty|not_ready|unavailable)|(?:net::)?ERR_[A-Z_]+/i.test(reason);
+}
+
+export async function retrySharedSnapshotRead(readAttempt, options = {}) {
+  if (typeof readAttempt !== "function") throw new TypeError("read_shared_snapshot_attempt_required");
+  const { attempts = 2, retryDelayMs = 650, sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms)) } = options;
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      return await readAttempt(attempt);
+    } catch (error) {
+      if (attempt >= attempts || !isRetryableSharedSnapshotFailure(error)) throw error;
+      await sleep(retryDelayMs * attempt);
+    }
+  }
+  throw new Error("codex_shared_snapshot_read_failed");
+}
