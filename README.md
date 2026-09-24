@@ -2,15 +2,15 @@
 
 面向 Windows Codex 用户的第三方提示词优化伴随应用，同时提供可安装的 Codex 插件。你可以把 Codex 任务链接绑定到小窗口，每次输入口语化原话，应用会在生成前刷新可访问的上下文，再用 Codex 的只读优化会话给出可复制的提示词。
 
-应用只生成文本，不会修改目标项目、续跑源任务或自动发送结果。它使用你当前 Codex CLI 的登录状态，不要求单独配置模型 API Key；优化调用固定使用 `gpt-5.6-luna` 和 `high` 推理强度，避免跟随用户默认设置切换到更高消耗模型。Codex 的 `chatgpt.com/s/cx_...` 分享链接是只读快照；伴随窗口会尝试读取分享页中实际可见的文本。快照不会随原任务更新，无法访问时会明确降级。普通 ChatGPT 私有链接仍不能承诺读取任意云端历史。
+应用只生成文本，不会修改目标项目、续跑源任务或自动发送结果。它使用你当前 Codex CLI 的登录状态，不要求单独配置模型 API Key；优化调用固定使用 `gpt-6-luna` 和 `high` 推理强度。请使用支持 GPT-6 Luna 的 Codex CLI 版本；模型是否可用也取决于账号计划和工作区设置。Codex 的 `chatgpt.com/s/cx_...` 分享链接是只读快照；伴随窗口会尝试读取分享页中实际可见的文本。快照不会随原任务更新，无法访问时会明确降级。普通 ChatGPT 私有链接仍不能承诺读取任意云端历史。
 
 ## 当前版本
 
-0.4.0 已包含：
+0.4.1 已包含：
 
 - Electron 伴随窗口：链接绑定、刷新状态、提示词输入、复制、Ctrl+Enter、置顶。
 - 随 Codex 自动显示时，助手会在鼠标所在显示器的右侧工作区弹出并垂直居中；手动打开仍沿用上次窗口位置。
-- Codex 只读优化调用：通过 `codex exec --model gpt-5.6-luna --config model_reasoning_effort="high" --json --sandbox read-only --ephemeral` 生成结果。
+- Codex 只读优化调用：通过 `codex exec --model gpt-6-luna --config model_reasoning_effort="high" --json --sandbox read-only --ephemeral` 生成结果。
 - 共用上下文核心：Codex 目标解析、数组消息提取、稳定目标标识、截断和失败状态。
 - Codex 插件：`resolve_context_target`、`read_context`、`refresh_context` 三个只读 MCP 工具及共用 Skill。
 - Windows NSIS／便携包构建配置、GitHub Actions 校验、MIT 许可证和人工验收清单。
@@ -53,7 +53,7 @@ npm.cmd run dev
 
 插件被调用时不会自动弹出 Electron 窗口：Skill/MCP 运行在 Codex 对话内，伴随窗口是独立客户端。日常使用请从开始菜单启动已安装的 `Context Prompt Assistant`，或在项目目录运行上面的命令；安装包位于 `release/`。
 
-如果 `npm run dev` 后没有看到窗口，可直接运行 `node_modules\\electron\\dist\\electron.exe .` 检查开发环境，或启动 `release\\Context Prompt Assistant-0.4.0-x64-portable.exe`。窗口创建后会在 Codex 旁边独立显示，不会嵌入 Codex 主窗口。
+如果 `npm run dev` 后没有看到窗口，可直接运行 `node_modules\\electron\\dist\\electron.exe .` 检查开发环境，或启动 `release\\Context Prompt Assistant-0.4.1-x64-portable.exe`。窗口创建后会在 Codex 旁边独立显示，不会嵌入 Codex 主窗口。
 
 如果 PowerShell 报“禁止运行 npm.ps1”，这是执行策略拦截了 PowerShell shim，项目本身还没有启动。可以使用上面的 `npm.cmd run dev`，或者只对当前窗口临时放行：
 
@@ -72,7 +72,7 @@ npm run dev
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\\scripts\\register-codex-autostart.ps1 `
-  -ExecutablePath (Resolve-Path '.\\release\\Context Prompt Assistant-0.4.0-x64-portable.exe').Path
+  -ExecutablePath (Resolve-Path '.\\release\\Context Prompt Assistant-0.4.1-x64-portable.exe').Path
 ```
 
 移除自动启动项：
@@ -86,7 +86,8 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\\scripts\\register-cod
 如果从其他目录执行 PowerShell，必须使用绝对路径；例如：
 
 ```powershell
-  powershell.exe -NoProfile -ExecutionPolicy Bypass -File "D:\CodexProjects\context-prompt-assistant\scripts\register-codex-autostart.ps1" -ExecutablePath "D:\CodexProjects\context-prompt-assistant\release\Context Prompt Assistant-0.4.0-x64-portable.exe"
+$repoRoot = 'C:\path\to\context-prompt-assistant'
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$repoRoot\scripts\register-codex-autostart.ps1" -ExecutablePath "$repoRoot\release\Context Prompt Assistant-0.4.1-x64-portable.exe"
 ```
 
 这是可选的 Windows 启动项，不会在你未执行注册命令时改变系统设置。

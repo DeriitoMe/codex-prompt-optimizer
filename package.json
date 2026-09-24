@@ -1,6 +1,6 @@
 {
   "name": "context-prompt-assistant",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "private": false,
   "type": "module",
   "description": "A Windows companion app and Codex plugin for context-aware prompt optimization.",

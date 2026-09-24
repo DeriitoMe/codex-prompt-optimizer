@@ -4,7 +4,7 @@ import { extractText } from "./context.mjs";
 import { describeCodexCliError, resolveCodexCli } from "./codex-cli.mjs";
 
 const DEFAULT_TIMEOUT_MS = 120000;
-export const DEFAULT_MODEL = "gpt-5.6-luna";
+export const DEFAULT_MODEL = "gpt-6-luna";
 export const DEFAULT_REASONING_EFFORT = "high";
 
 export function buildCodexArgs({ cwd, model = DEFAULT_MODEL, reasoningEffort = DEFAULT_REASONING_EFFORT } = {}) {

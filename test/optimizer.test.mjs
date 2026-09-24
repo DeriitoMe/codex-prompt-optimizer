@@ -27,10 +27,10 @@ test("optimization modes have distinct scopes", () => {
   assert.match(professional, /验收标准/);
 });
 
-test("optimizer pins the low-cost Luna model and high reasoning effort", () => {
+test("optimizer pins GPT-6 Luna and high reasoning effort", () => {
   const args = buildCodexArgs({ cwd: "D:/CodexProjects/example" });
   assert.deepEqual(args.slice(-6), [
-    "--model", "gpt-5.6-luna",
+    "--model", "gpt-6-luna",
     "--config", 'model_reasoning_effort="high"',
     "--cd", "D:/CodexProjects/example",
   ]);
