@@ -38,13 +38,20 @@
             <div id="target" class="target-meta">每次优化前会重新检查可访问范围。</div>
           </div>
         </div>
-        <div class="target-controls">
+        <div class="target-controls local-target-controls">
+          <button id="select-local" class="primary-outline-button" type="button">选择本机会话</button>
+          <button id="refresh-target" class="secondary-button" type="button" disabled>刷新</button>
+        </div>
+        <details id="link-entry" class="link-entry">
+          <summary>使用分享链接</summary>
+          <div class="target-controls">
           <input id="url" type="url" placeholder="粘贴 Codex 或 ChatGPT 分享链接" autocomplete="off" aria-label="Codex 或 ChatGPT 分享链接" />
           <button id="paste-target" class="secondary-button" title="从剪贴板粘贴链接">粘贴</button>
           <button id="bind" class="primary-outline-button">绑定</button>
-        </div>
+          </div>
+        </details>
         <div class="target-footer">
-          <span id="target-source">支持 Codex 任务和只读共享快照</span>
+          <span id="target-source">选定一次本机会话，之后直接刷新。</span>
           <div class="target-actions"><button id="retry-context" class="text-button" type="button" hidden>重试读取</button><button id="details-toggle" class="text-button" type="button">查看状态</button></div>
         </div>
         <div id="target-details" class="target-details" hidden></div>
@@ -89,7 +96,18 @@
         <span>只读优化会话 · 不修改项目 · 不续跑任务 · 不自动发送</span>
       </footer>
     </main>
-  </div>
+
+  <dialog id="session-dialog" class="settings-dialog session-dialog">
+    <div class="settings-card session-card">
+      <div class="settings-heading"><div><h2>选择本机 Codex 会话</h2><p class="session-hint">按标题与项目目录确认目标，不会自动选择最近会话。</p></div><button id="close-sessions" class="icon-button" type="button" aria-label="关闭会话选择">×</button></div>
+      <input id="session-search" class="session-search" type="search" placeholder="搜索标题、目录或会话 ID" aria-label="搜索会话" />
+      <div class="session-filters"><button id="choose-project" class="secondary-button" type="button">筛选项目目录</button><button id="clear-project" class="text-button" type="button" hidden>清除筛选</button><label><input id="include-archived" type="checkbox" /> 已归档</label><button id="reload-sessions" class="text-button" type="button">重新读取列表</button></div>
+      <div id="project-filter" class="session-hint" hidden></div>
+      <div id="session-list-status" class="session-hint" role="status">正在读取…</div>
+      <div id="session-list" class="session-list" aria-label="可选会话"></div>
+      <div class="session-home"><span id="session-home" class="session-hint"></span><button id="choose-home" class="text-button" type="button">更换数据目录</button></div>
+    </div>
+  </dialog>
 
   <dialog id="settings-dialog" class="settings-dialog">
     <form method="dialog" class="settings-card">
@@ -103,6 +121,7 @@
       <div id="settings-status" class="settings-status" role="status"></div>
     </form>
   </dialog>
+  </div>
   <script src="./renderer.js"></script>
 </body>
 </html>

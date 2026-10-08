@@ -46,7 +46,7 @@ try {
   }
 }
 
-const APP_VERSION = "0.4.1";
+const APP_VERSION = "0.4.2";
 const DEFAULTS = {
   layout: "vertical",
   fontScale: "standard",
@@ -71,6 +71,7 @@ let tray;
 let contextModule;
 let appServerModule;
 let optimizerModule;
+let localContextModule;
 let prefs = { ...DEFAULTS };
 let stateSaveTimer;
 let codexWatcher;
@@ -79,11 +80,13 @@ let codexWasRunning = false;
 let codexMisses = 0;
 let watchInFlight = false;
 let lastCodexStatus = { state: "unknown", reason: "not_checked" };
+let lastLoggedCodexState = "";
 let isQuitting = false;
 let shortcutRegistered = false;
 const launchCodexOnStart = process.argv.includes("--launch-codex");
 const bindings = new Map();
 const activeOptimizations = new Map();
+const activeContextReads = new Map();
 
 const hasSingleInstance = app.requestSingleInstanceLock();
 if (!hasSingleInstance) {
@@ -99,7 +102,18 @@ async function modules() {
   if (!contextModule) contextModule = await import(pathToFileURL(path.join(__dirname, "..", "scripts", "context.mjs")));
   if (!appServerModule) appServerModule = await import(pathToFileURL(path.join(__dirname, "..", "scripts", "codex-app-server.mjs")));
   if (!optimizerModule) optimizerModule = await import(pathToFileURL(path.join(__dirname, "..", "scripts", "optimizer.mjs")));
-  return { contextModule, appServerModule, optimizerModule };
+  if (!localContextModule) localContextModule = await import(pathToFileURL(path.join(__dirname, "..", "scripts", "local-context.mjs")));
+  return { contextModule, appServerModule, optimizerModule, localContextModule };
+}
+
+function contextTargetPath() { return path.join(app.getPath("userData"), "context-target.json"); }
+
+function persistContextTarget(value) {
+  // Binding metadata only. Never persist conversation text or authentication.
+  const temp = `${contextTargetPath()}.tmp`;
+  fs.writeFileSync(temp, JSON.stringify(value, null, 2), "utf8");
+  fs.renameSync(temp, contextTargetPath());
+  return value;
 }
 
 function preferencesPath() {
@@ -299,12 +313,21 @@ async function setRegistryAutostart(enabled) {
   if (process.platform !== "win32") return { ok: false, reason: "windows_only" };
   try {
     if (enabled) {
+      // electron-builder's portable launcher extracts the app to a temporary
+      // directory. process.execPath then points there, and that path vanishes
+      // after exit. Register the original portable launcher when available.
+      const portableLauncher = process.env.PORTABLE_EXECUTABLE_FILE;
+      const executablePath = app.isPackaged && portableLauncher && fs.existsSync(portableLauncher)
+        ? path.resolve(portableLauncher)
+        : process.execPath;
       const command = app.isPackaged
-        ? `"${process.execPath}" --watch-codex`
+        ? `"${executablePath}" --watch-codex`
         : `"${process.execPath}" "${app.getAppPath()}" --watch-codex`;
       await runFile("reg.exe", ["ADD", STARTUP_KEY, "/v", STARTUP_VALUE, "/t", "REG_SZ", "/d", command, "/f"]);
+      startupLog(`autostart-registered enabled=true executable=${executablePath}`);
     } else {
       await runFile("reg.exe", ["DELETE", STARTUP_KEY, "/v", STARTUP_VALUE, "/f"]);
+      startupLog("autostart-registered enabled=false");
     }
     return { ok: true, registered: await queryRegistryAutostart() };
   } catch (error) {
@@ -372,6 +395,11 @@ async function watchCodexProcess() {
   watchInFlight = true;
   try {
     lastCodexStatus = await queryCodexProcess();
+    const stateKey = `${lastCodexStatus.state}:${lastCodexStatus.method || "tasklist"}:${lastCodexStatus.reason || ""}`;
+    if (stateKey !== lastLoggedCodexState) {
+      startupLog(`codex-check state=${stateKey}`);
+      lastLoggedCodexState = stateKey;
+    }
     sendToWindow("codex-status", lastCodexStatus);
     if (lastCodexStatus.state === "running") {
       codexMisses = 0;
@@ -388,6 +416,7 @@ async function watchCodexProcess() {
 function startCodexWatcher() {
   if (codexWatcher) return;
   watcherEnabled = true;
+  startupLog("codex-watcher started");
   void watchCodexProcess();
   codexWatcher = setInterval(() => void watchCodexProcess(), 1500);
 }
@@ -451,10 +480,13 @@ async function sendDiagnostics() {
   return diagnostics;
 }
 
-async function readSharedCodexSnapshotAttempt(url, maxChars, contextModule) {
+async function readSharedCodexSnapshotAttempt(url, maxChars, contextModule, signal) {
   let snapshotWindow;
+  const abort = () => { if (snapshotWindow && !snapshotWindow.isDestroyed()) snapshotWindow.destroy(); };
   try {
+    if (signal?.aborted) throw new Error("context_cancelled");
     snapshotWindow = new BrowserWindow({ show: false, title: "Codex shared snapshot reader", webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true } });
+    signal?.addEventListener("abort", abort, { once: true });
     snapshotWindow.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
     snapshotWindow.webContents.on("will-navigate", (event, nextUrl) => { try { const next = new URL(nextUrl); if (!next.hostname.endsWith("chatgpt.com") && next.hostname !== "chat.openai.com") event.preventDefault(); } catch { event.preventDefault(); } });
     let loadTimer;
@@ -465,7 +497,7 @@ async function readSharedCodexSnapshotAttempt(url, maxChars, contextModule) {
       ]);
     } finally { clearTimeout(loadTimer); }
     const page = await contextModule.waitForSharedSnapshotPage(
-      () => snapshotWindow.webContents.executeJavaScript(`(() => ({ title: document.title || "", text: document.body?.innerText || "", url: location.href }))()`, true),
+      () => { if (signal?.aborted) throw new Error("context_cancelled"); return snapshotWindow.webContents.executeJavaScript(`(() => ({ title: document.title || "", text: document.body?.innerText || "", url: location.href }))()`, true); },
       { timeoutMs: 12000, intervalMs: 300, minimumInitialWaitMs: 1600, stableMs: 900 },
     );
     const text = String(page?.text || "").trim();
@@ -473,32 +505,33 @@ async function readSharedCodexSnapshotAttempt(url, maxChars, contextModule) {
     if (/access denied|page not found|something went wrong/i.test(text) && text.length < 1200) throw new Error("codex_shared_snapshot_unavailable");
     const normalized = contextModule.normalizeSharedSnapshot(text, maxChars);
     return { ok: true, target: contextModule.resolveContextTarget(url), access: "read", checkedAt: new Date().toISOString(), ...normalized };
-  } finally { if (snapshotWindow && !snapshotWindow.isDestroyed()) snapshotWindow.destroy(); }
+  } finally { signal?.removeEventListener("abort", abort); if (snapshotWindow && !snapshotWindow.isDestroyed()) snapshotWindow.destroy(); }
 }
 
-async function readSharedCodexSnapshot(url, maxChars = 24000) {
+async function readSharedCodexSnapshot(url, maxChars = 24000, signal) {
   const { contextModule } = await modules();
   try {
     return await contextModule.retrySharedSnapshotRead(
-      () => readSharedCodexSnapshotAttempt(url, maxChars, contextModule),
+      () => readSharedCodexSnapshotAttempt(url, maxChars, contextModule, signal),
       { attempts: 2, retryDelayMs: 650 },
     );
   } catch (error) {
+    if (signal?.aborted) throw new Error("context_cancelled");
     return contextModule.classifyReadFailure(contextModule.resolveContextTarget(url), error?.message || "codex_shared_snapshot_read_failed");
   }
 }
 
-async function readContext(url, maxChars = 24000) {
+async function readContext(url, maxChars = 24000, signal) {
   const { contextModule, appServerModule } = await modules();
   const target = contextModule.resolveContextTarget(url);
   if (!target.ok) return contextModule.classifyReadFailure(target, target.reason);
-  if (target.provider === "codex" && target.targetType === "shared_snapshot") return readSharedCodexSnapshot(url, maxChars);
+  if (target.provider === "codex" && target.targetType === "shared_snapshot") return readSharedCodexSnapshot(url, maxChars, signal);
   if (target.provider !== "codex" || target.targetType !== "thread") {
     const reason = target.provider === "chatgpt" && target.targetType === "scheduled_task" ? "chatgpt_scheduled_task_link_not_conversation" : "only_codex_thread_read_is_available_in_this_version";
     return contextModule.classifyReadFailure(target, reason);
   }
   try {
-    const thread = await appServerModule.readCodexThread(target.id, { timeoutMs: 15000 });
+    const thread = await appServerModule.readCodexThread(target.id, { timeoutMs: 15000, signal });
     if (!thread) return contextModule.classifyReadFailure(target, "codex_thread_not_found");
     const normalized = contextModule.normalizeCodexThread(thread, maxChars);
     return { ok: true, target, access: "read", checkedAt: new Date().toISOString(), ...normalized };
@@ -519,15 +552,44 @@ async function setLayout(layout) {
 }
 
 ipcMain.handle("resolve-target", async (_event, url) => (await modules()).contextModule.resolveContextTarget(url));
-ipcMain.handle("refresh-context", async (_event, { url, maxChars }) => {
-  const { contextModule } = await modules();
-  const target = contextModule.resolveContextTarget(url);
-  const key = target.targetKey || String(url || "");
+ipcMain.handle("get-context-target", () => readJson(contextTargetPath(), null));
+ipcMain.handle("save-context-target", async (_event, value) => {
+  const { contextModule, localContextModule } = await modules();
+  if (value?.kind === "local_thread") return persistContextTarget(await localContextModule.validateLocalBinding(value));
+  if (value?.kind === "url" && contextModule.resolveContextTarget(value.url).ok) return persistContextTarget({ version: 1, kind: "url", url: value.url });
+  throw new Error("invalid_context_binding");
+});
+ipcMain.handle("create-local-binding", async (_event, { thread, codexHome }) => (await modules()).localContextModule.createLocalBinding(thread, codexHome));
+ipcMain.handle("list-local-threads", async (_event, payload = {}) => {
+  const requestId = String(payload.requestId || Date.now());
+  const controller = new AbortController();
+  activeContextReads.set(requestId, controller);
+  try { return await (await modules()).localContextModule.listAvailableThreads({ codexHome: payload.codexHome, archived: Boolean(payload.archived), signal: controller.signal }); }
+  finally { activeContextReads.delete(requestId); }
+});
+ipcMain.handle("choose-context-directory", async (_event, purpose) => {
+  const selected = await dialog.showOpenDialog(mainWindow, { title: purpose === "codex_home" ? "选择 Codex 数据目录（包含 sessions）" : "选择项目目录以筛选会话", properties: ["openDirectory"] });
+  return selected.canceled ? null : selected.filePaths[0];
+});
+ipcMain.handle("refresh-context", async (_event, payload = {}) => {
+  const { contextModule, localContextModule } = await modules();
+  const selection = payload.binding || { kind: "url", url: payload.url };
+  const target = selection.kind === "local_thread" ? localContextModule.localBindingTarget(selection) : contextModule.resolveContextTarget(selection.url);
+  const key = target.targetKey || String(selection.url || "");
   const previous = bindings.get(key);
-  const current = await readContext(url, maxChars);
-  if (!current.ok && previous?.ok) return { ...current, access: "stale", stale: true, staleSince: previous.checkedAt, cachedContext: previous };
-  if (current.ok) bindings.set(key, current);
-  return { ...current, cacheState: previous ? "refreshed" : "initialized", changedSinceLastRead: previous ? contextModule.contextFingerprint(previous) !== contextModule.contextFingerprint(current) : null };
+  const requestId = String(payload.requestId || Date.now());
+  const controller = new AbortController();
+  activeContextReads.set(requestId, controller);
+  try {
+    const maxChars = Math.max(1000, Math.min(Number(payload.maxChars) || 24000, 100000));
+    const current = selection.kind === "local_thread"
+      ? await localContextModule.readBoundThread(selection, { maxChars, signal: controller.signal })
+      : await readContext(selection.url, maxChars, controller.signal);
+    if (controller.signal.aborted) throw new Error("context_cancelled");
+    if (!current.ok && previous?.ok) return { ...current, access: "stale", stale: true, staleSince: previous.checkedAt };
+    if (current.ok) bindings.set(key, current);
+    return { ...current, cacheState: previous ? "refreshed" : "initialized", changedSinceLastRead: previous && current.ok ? localContextModule.contextContentFingerprint(previous) !== localContextModule.contextContentFingerprint(current) : null };
+  } finally { activeContextReads.delete(requestId); }
 });
 ipcMain.handle("optimize", async (_event, payload) => {
   const { optimizerModule } = await modules();
@@ -535,10 +597,16 @@ ipcMain.handle("optimize", async (_event, payload) => {
   const requestId = String(payload?.requestId || Date.now());
   const controller = new AbortController();
   activeOptimizations.set(requestId, controller);
-  try { return await optimizerModule.optimizePrompt({ draft: payload?.draft, contextText: context?.access === "stale" ? "" : context?.text || "", contextStatus: context?.access || "none", optimizationMode: payload?.optimizationMode || prefs.optimizationMode, cwd: payload?.cwd || process.cwd(), timeoutMs: 120000, signal: controller.signal }); }
+  const contextStatus = context?.access === "read" ? `${context.access}; source=${context.source}; coverage=${context.coverage?.kind || "unknown"}; checkedAt=${context.checkedAt || "unknown"}${context.coverage?.truncated ? "; 长历史已截断" : ""}${context.warning ? `; ${context.warning}` : ""}` : context?.access || "none";
+  try { return await optimizerModule.optimizePrompt({ draft: payload?.draft, contextText: context?.access === "read" ? context?.text || "" : "", contextStatus, optimizationMode: payload?.optimizationMode || prefs.optimizationMode, cwd: payload?.cwd || process.cwd(), timeoutMs: 120000, signal: controller.signal }); }
   finally { activeOptimizations.delete(requestId); }
 });
-ipcMain.handle("cancel-optimize", (_event, requestId) => { const controller = activeOptimizations.get(String(requestId)); controller?.abort(); return Boolean(controller); });
+ipcMain.handle("cancel-optimize", (_event, requestId) => {
+  const model = activeOptimizations.get(String(requestId));
+  const read = activeContextReads.get(String(requestId));
+  model?.abort(); read?.abort();
+  return Boolean(model || read);
+});
 ipcMain.handle("copy", (_event, value) => { clipboard.writeText(String(value || "")); return true; });
 ipcMain.handle("read-clipboard", () => clipboard.readText());
 ipcMain.handle("set-always-on-top", (_event, enabled) => { mainWindow?.setAlwaysOnTop(Boolean(enabled)); return Boolean(enabled); });
@@ -559,6 +627,7 @@ ipcMain.handle("open-link", (_event, url) => shell.openExternal(String(url)));
 if (hasSingleInstance) {
   app.whenReady().then(() => {
     loadPreferences();
+    startupLog(`ready watcherEnabled=${watcherEnabled} autoShowWithCodex=${prefs.autoShowWithCodex} packaged=${app.isPackaged}`);
     createTray();
     registerGlobalShortcut();
     if (watcherEnabled) startCodexWatcher(); else createWindow();
@@ -569,6 +638,8 @@ if (hasSingleInstance) {
 
 app.on("before-quit", () => {
   isQuitting = true;
+  for (const controller of activeContextReads.values()) controller.abort();
+  for (const controller of activeOptimizations.values()) controller.abort();
   saveWindowState();
   clearTimeout(stateSaveTimer);
   if (codexWatcher) clearInterval(codexWatcher);

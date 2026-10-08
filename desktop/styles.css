@@ -22,15 +22,19 @@
 }
 
 * { box-sizing: border-box; }
-html, body { width: 100%; min-width: 420px; min-height: 100%; }
-body { margin: 0; overflow-x: hidden; background: #f3f5f8; }
+html, body { width: 100%; height: 100%; min-width: 420px; min-height: 0; }
+body { margin: 0; overflow: hidden; background: #f3f5f8; }
 button, input, textarea, select { font: inherit; }
 button { border: 0; cursor: pointer; }
 button:disabled { cursor: not-allowed; opacity: .45; }
 
 .app-shell {
   position: relative;
-  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
   overflow: hidden;
   background:
     radial-gradient(circle at 92% 0%, rgba(232, 237, 250, .9), transparent 38%),
@@ -39,6 +43,9 @@ button:disabled { cursor: not-allowed; opacity: .45; }
 
 .titlebar {
   height: 36px;
+  flex: 0 0 36px;
+  position: relative;
+  z-index: 2;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -54,7 +61,8 @@ button:disabled { cursor: not-allowed; opacity: .45; }
 .titlebar-mark { width: 18px; height: 18px; display: grid; place-items: center; border: 1px solid rgba(91,82,189,.26); border-radius: 6px; color: var(--accent); background: #f1efff; font-size: 10px; font-weight: 750; }
 .titlebar-hint { color: #a0a7b2; font-size: 10px; -webkit-app-region: no-drag; app-region: no-drag; }
 
-.workspace { width: min(100%, 900px); margin: 0 auto; padding: 24px 28px 18px; display: flex; flex-direction: column; gap: 16px; }
+.workspace { width: min(100%, 900px); flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior-y: contain; scrollbar-gutter: stable; margin: 0 auto; padding: 24px 28px 18px; display: flex; flex-direction: column; gap: 16px; }
+.workspace > .app-header, .workspace > .target-card, .workspace > .workspace-grid, .workspace > .safety-note { flex: 0 0 auto; }
 .app-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; min-height: 67px; }
 .eyebrow, .section-kicker { color: #8b94a2; font-size: 10px; letter-spacing: .13em; font-weight: 700; }
 h1 { margin: 5px 0 0; color: var(--ink); font-size: 21px; line-height: 1.3; letter-spacing: -.02em; font-weight: 700; }
@@ -97,6 +105,10 @@ h1 { margin: 5px 0 0; color: var(--ink); font-size: 21px; line-height: 1.3; lett
 .target-title { color: #414b5a; font-size: 13px; font-weight: 700; }
 .target-meta { max-width: 340px; margin-top: 3px; overflow: hidden; color: var(--muted); font-size: 11px; line-height: 1.45; text-overflow: ellipsis; white-space: nowrap; }
 .target-controls { display: flex; gap: 7px; min-width: 0; }
+.local-target-controls { justify-content: flex-end; align-items: center; }
+.link-entry { grid-column: 1 / -1; color: var(--ink-soft); font-size: 12px; }
+.link-entry summary { cursor: pointer; padding: 4px 0; }
+.link-entry .target-controls { margin-top: 8px; min-height: 36px; }
 input, textarea, select { outline: none; color: var(--ink); border: 1px solid var(--line-strong); background: rgba(255,255,255,.74); box-shadow: inset 0 1px rgba(255,255,255,.9); transition: border-color .16s ease, background .16s ease, box-shadow .16s ease; }
 input:focus, textarea:focus, select:focus { border-color: #a8a1e3; background: #fff; box-shadow: 0 0 0 3px rgba(91,82,189,.1), inset 0 1px rgba(255,255,255,.9); }
 input { width: 100%; min-width: 0; padding: 0 11px; border-radius: 9px; font-size: 12px; }
@@ -148,6 +160,22 @@ textarea { display: block; width: 100%; min-height: 164px; margin-top: 13px; pad
 .settings-actions { display: flex; justify-content: flex-end; gap: 8px; padding-top: 3px; }
 .diagnostics-output { max-height: 180px; overflow: auto; margin: 0; padding: 10px; border-radius: 9px; color: #596373; background: #f4f6f9; font: 11px/1.55 ui-monospace, SFMono-Regular, Consolas, monospace; white-space: pre-wrap; }
 .settings-status { min-height: 18px; color: var(--muted); font-size: 11px; line-height: 1.5; white-space: pre-wrap; }
+.session-dialog { width: min(680px, calc(100vw - 28px)); max-height: calc(100vh - 56px); }
+.session-card { max-height: calc(100vh - 56px); min-height: 320px; gap: 12px; }
+.session-search { min-height: 36px; flex: 0 0 auto; }
+.session-hint { margin: 6px 0 0; color: var(--muted); font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
+.session-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.session-filters label { display: flex; align-items: center; gap: 5px; color: var(--ink-soft); font-size: 12px; }
+.session-filters input { width: 16px; height: 16px; accent-color: var(--accent); }
+.session-list { display: flex; flex-direction: column; gap: 8px; min-height: 80px; overflow-y: auto; padding: 3px; flex: 1 1 auto; }
+.session-row { display: flex; flex-direction: column; gap: 5px; padding: 12px; text-align: left; color: var(--ink); background: var(--paper-soft); border: 1px solid var(--line); border-radius: 10px; flex: 0 0 auto; }
+.session-row:hover, .session-row:focus-visible { border-color: var(--accent); background: var(--accent-soft); }
+.session-row strong { font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+.session-row small { font-size: 11px; line-height: 1.5; color: var(--muted); overflow-wrap: anywhere; }
+.session-home { display: flex; align-items: center; justify-content: space-between; gap: 8px; border-top: 1px solid var(--line); padding-top: 8px; }
+.session-home .session-hint { margin: 0; }
+.session-home button { flex: 0 0 auto; }
+button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 .app-shell[data-layout="horizontal"] .workspace { width: min(100%, 1120px); }
 .app-shell[data-layout="horizontal"] .workspace-grid { grid-template-columns: minmax(0, .92fr) minmax(0, 1.08fr); align-items: stretch; }
@@ -162,6 +190,7 @@ textarea { display: block; width: 100%; min-height: 164px; margin-top: 13px; pad
   .workspace { padding: 20px 17px 16px; }
   .target-card { grid-template-columns: 1fr; }
   .target-controls { grid-column: 1; }
+  .local-target-controls { justify-content: flex-start; }
   .app-shell[data-layout="horizontal"] .workspace-grid { grid-template-columns: 1fr; }
   .app-shell[data-layout="horizontal"] .prompt-panel, .app-shell[data-layout="horizontal"] .result-panel { min-height: auto; }
   .app-shell[data-layout="horizontal"] textarea { min-height: 164px; }

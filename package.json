@@ -1,6 +1,6 @@
 {
   "name": "context-prompt-assistant",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "private": false,
   "type": "module",
   "description": "A Windows companion app and Codex plugin for context-aware prompt optimization.",
@@ -8,7 +8,7 @@
   "main": "desktop/main.cjs",
   "scripts": {
     "test": "node --test",
-    "check": "node --check scripts/context.mjs && node --check scripts/codex-cli.mjs && node --check scripts/codex-app-server.mjs && node --check scripts/server.mjs && node --check scripts/optimizer.mjs && node --check desktop/main.cjs && node --check desktop/preload.cjs && node --check desktop/renderer.js",
+    "check": "node --check scripts/context.mjs && node --check scripts/codex-cli.mjs && node --check scripts/codex-app-server.mjs && node --check scripts/local-sessions.mjs && node --check scripts/local-context.mjs && node --check scripts/server.mjs && node --check scripts/optimizer.mjs && node --check desktop/main.cjs && node --check desktop/preload.cjs && node --check desktop/renderer.js",
     "validate": "node scripts/validate.mjs",
     "verify:release": "node scripts/verify-release.mjs",
     "start": "electron .",

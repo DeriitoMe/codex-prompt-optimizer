@@ -11,6 +11,8 @@ const required = [
   "scripts/context.mjs",
   "scripts/codex-app-server.mjs",
   "scripts/codex-cli.mjs",
+  "scripts/local-sessions.mjs",
+  "scripts/local-context.mjs",
   "scripts/server.mjs",
   "scripts/optimizer.mjs",
   "scripts/app-server-diagnostics.mjs",

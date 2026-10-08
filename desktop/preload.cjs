@@ -1,6 +1,11 @@
 const { contextBridge, ipcRenderer } = require("electron");
 contextBridge.exposeInMainWorld("contextPromptAssistant", {
   resolveTarget: (url) => ipcRenderer.invoke("resolve-target", url),
+  listLocalThreads: (payload) => ipcRenderer.invoke("list-local-threads", payload),
+  createLocalBinding: (payload) => ipcRenderer.invoke("create-local-binding", payload),
+  chooseContextDirectory: (purpose) => ipcRenderer.invoke("choose-context-directory", purpose),
+  getContextTarget: () => ipcRenderer.invoke("get-context-target"),
+  saveContextTarget: (value) => ipcRenderer.invoke("save-context-target", value),
   refreshContext: (payload) => ipcRenderer.invoke("refresh-context", payload),
   optimize: (payload) => ipcRenderer.invoke("optimize", payload),
   cancelOptimize: (requestId) => ipcRenderer.invoke("cancel-optimize", requestId),
