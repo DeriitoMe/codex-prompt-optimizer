@@ -43,7 +43,8 @@ const mcp = JSON.parse(fs.readFileSync(path.join(root, ".mcp.json"), "utf8"));
 if (manifest.name !== "context-prompt-assistant") throw new Error("manifest name mismatch");
 if (manifest.mcpServers !== "./.mcp.json") throw new Error("manifest MCP path mismatch");
 if (!mcp.mcpServers?.context_prompt?.command) throw new Error("MCP server command missing");
-const skill = fs.readFileSync(path.join(root, "skills/context-prompt-assistant/SKILL.md"), "utf8");
+const skill = fs.readFileSync(path.join(root, "skills/context-prompt-assistant/SKILL.md"), "utf8")
+  .replace(/^\uFEFF/, "").replace(/\r\n?/g, "\n");
 if (!skill.startsWith("---\n") || !skill.includes("name: context-prompt-assistant")) throw new Error("invalid skill frontmatter");
 if (skill.includes("[TODO:")) throw new Error("skill contains TODO placeholder");
 const cases = JSON.parse(fs.readFileSync(path.join(root, "test/cases.json"), "utf8"));
