@@ -1,2 +1,2 @@
-800851f33bfa657085a9e8a561798b92c488bd9bae253b4cc56b50b95b5831b9  Context Prompt Assistant-0.4.2-x64-setup.exe
-043b989a872cc7b79798bb4f1487fec42483fb0bdc7ca022de5a603733e9ac58  Context Prompt Assistant-0.4.2-x64-portable.exe
+820bec58feb2d68db32e00261679295835c645528dcd87d1835179238f4af208  Context Prompt Assistant-0.4.2-x64-setup.exe
+821e5e516ed800a5536acbf496d7c72007d276cb97315c50f6993000f119dfa6  Context Prompt Assistant-0.4.2-x64-portable.exe
